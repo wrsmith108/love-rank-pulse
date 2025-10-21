@@ -1,32 +1,165 @@
-import { useState } from "react";
+import * as React from "react";
 import { Header } from "@/components/Header";
-import { FilterBar } from "@/components/FilterBar";
+import { FilterBar, TimePeriod, SortOption } from "@/components/FilterBar";
 import { LeaderboardTable, Player } from "@/components/LeaderboardTable";
-import { MyStatsModal } from "@/components/MyStatsModal";
+import { MyStatsModal, PlayerStats } from "@/components/MyStatsModal";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-// Mock data for demonstration
+// Enhanced mock data for demonstration
 const mockPlayers: Player[] = [
-  { player_id: "1", player_name: "ShadowStriker", country_code: "US", kills: 28, deaths: 8, kd_ratio: 3.50, is_win: true, rank: 1 },
-  { player_id: "2", player_name: "NightHawk", country_code: "GB", kills: 25, deaths: 10, kd_ratio: 2.50, is_win: true, rank: 2 },
-  { player_id: "3", player_name: "PhantomAce", country_code: "DE", kills: 22, deaths: 9, kd_ratio: 2.44, is_win: true, rank: 3 },
-  { player_id: "4", player_name: "BlitzKrieg", country_code: "FR", kills: 24, deaths: 11, kd_ratio: 2.18, is_win: false, rank: 4 },
-  { player_id: "5", player_name: "VortexPro", country_code: "JP", kills: 20, deaths: 10, kd_ratio: 2.00, is_win: true, rank: 5 },
-  { player_id: "6", player_name: "IronSight", country_code: "CA", kills: 19, deaths: 10, kd_ratio: 1.90, is_win: false, rank: 6 },
-  { player_id: "7", player_name: "TacticalOps", country_code: "AU", kills: 18, deaths: 10, kd_ratio: 1.80, is_win: true, rank: 7 },
-  { player_id: "8", player_name: "StealthMode", country_code: "KR", kills: 17, deaths: 10, kd_ratio: 1.70, is_win: false, rank: 8 },
-  { player_id: "9", player_name: "ReaperMain", country_code: "BR", kills: 16, deaths: 10, kd_ratio: 1.60, is_win: true, rank: 9 },
-  { player_id: "10", player_name: "CyberNinja", country_code: "SE", kills: 15, deaths: 10, kd_ratio: 1.50, is_win: false, rank: 10 },
-  { player_id: "current", player_name: "You", country_code: "US", kills: 14, deaths: 12, kd_ratio: 1.17, is_win: true, rank: 15 },
+  {
+    player_id: "1",
+    player_name: "ShadowStriker",
+    country_code: "US",
+    kills: 328,
+    deaths: 78,
+    kd_ratio: 4.21,
+    is_win: true,
+    rank: 1,
+    headshots: 156,
+    accuracy: 68,
+    score: 9850
+  },
+  {
+    player_id: "2",
+    player_name: "NightHawk",
+    country_code: "GB",
+    kills: 295,
+    deaths: 110,
+    kd_ratio: 2.68,
+    is_win: true,
+    rank: 2,
+    headshots: 98,
+    accuracy: 62,
+    score: 8720
+  },
+  {
+    player_id: "3",
+    player_name: "PhantomAce",
+    country_code: "DE",
+    kills: 272,
+    deaths: 109,
+    kd_ratio: 2.50,
+    is_win: true,
+    rank: 3,
+    headshots: 124,
+    accuracy: 71,
+    score: 8450
+  },
+  {
+    player_id: "4",
+    player_name: "BlitzKrieg",
+    country_code: "FR",
+    kills: 254,
+    deaths: 121,
+    kd_ratio: 2.10,
+    is_win: false,
+    rank: 4,
+    headshots: 87,
+    accuracy: 58,
+    score: 7920
+  },
+  {
+    player_id: "5",
+    player_name: "VortexPro",
+    country_code: "JP",
+    kills: 230,
+    deaths: 115,
+    kd_ratio: 2.00,
+    is_win: true,
+    rank: 5,
+    headshots: 92,
+    accuracy: 64,
+    score: 7650
+  },
+  {
+    player_id: "6",
+    player_name: "IronSight",
+    country_code: "CA",
+    kills: 219,
+    deaths: 120,
+    kd_ratio: 1.83,
+    is_win: false,
+    rank: 6,
+    headshots: 78,
+    accuracy: 59,
+    score: 7320
+  },
+  {
+    player_id: "7",
+    player_name: "TacticalOps",
+    country_code: "AU",
+    kills: 208,
+    deaths: 118,
+    kd_ratio: 1.76,
+    is_win: true,
+    rank: 7,
+    headshots: 65,
+    accuracy: 61,
+    score: 7180
+  },
+  {
+    player_id: "8",
+    player_name: "StealthMode",
+    country_code: "KR",
+    kills: 197,
+    deaths: 116,
+    kd_ratio: 1.70,
+    is_win: false,
+    rank: 8,
+    headshots: 71,
+    accuracy: 57,
+    score: 6950
+  },
+  {
+    player_id: "9",
+    player_name: "ReaperMain",
+    country_code: "BR",
+    kills: 186,
+    deaths: 112,
+    kd_ratio: 1.66,
+    is_win: true,
+    rank: 9,
+    headshots: 59,
+    accuracy: 55,
+    score: 6780
+  },
+  {
+    player_id: "10",
+    player_name: "CyberNinja",
+    country_code: "SE",
+    kills: 175,
+    deaths: 115,
+    kd_ratio: 1.52,
+    is_win: false,
+    rank: 10,
+    headshots: 48,
+    accuracy: 52,
+    score: 6540
+  },
+  {
+    player_id: "current",
+    player_name: "You",
+    country_code: "US",
+    kills: 164,
+    deaths: 142,
+    kd_ratio: 1.15,
+    is_win: true,
+    rank: 15,
+    headshots: 42,
+    accuracy: 49,
+    score: 5980
+  },
 ];
 
-const mockPlayerStats = {
+const mockPlayerStats: PlayerStats = {
   player_name: "You",
   country_code: "US",
-  kd_ratio: 1.17,
-  kills: 156,
-  deaths: 133,
-  wins: 12,
-  losses: 7,
+  kd_ratio: 1.15,
+  kills: 1564,
+  deaths: 1356,
+  wins: 124,
+  losses: 73,
   win_rate: 63,
   session_rank: 15,
   country_rank: 234,
@@ -34,12 +167,25 @@ const mockPlayerStats = {
   total_session_players: 100,
   total_country_players: 1847,
   total_global_players: 10000,
+  // Additional stats
+  headshots: 428,
+  accuracy: 49,
+  playtime: 1240, // in minutes
+  highest_killstreak: 12,
+  favorite_weapon: "AK-47 Tactical",
+  weapon_accuracy: 52,
+  recent_performance: "improving",
+  matches_played: 197
 };
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<"session" | "country" | "global">("session");
-  const [timePeriod, setTimePeriod] = useState("session");
-  const [showMyStats, setShowMyStats] = useState(false);
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = React.useState<"session" | "country" | "global">("session");
+  const [timePeriod, setTimePeriod] = React.useState<TimePeriod>("session");
+  const [showMyStats, setShowMyStats] = React.useState(false);
+  const [sortBy, setSortBy] = React.useState<SortOption>("rank");
+  const [showOnlyFriends, setShowOnlyFriends] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,6 +218,15 @@ const Index = () => {
             timePeriod={timePeriod}
             onTimePeriodChange={setTimePeriod}
             isLive={false}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            showOnlyFriends={showOnlyFriends}
+            onToggleFriends={setShowOnlyFriends}
+            onRefresh={() => {
+              setIsLoading(true);
+              // Simulate refresh delay
+              setTimeout(() => setIsLoading(false), 1000);
+            }}
           />
         )}
 
@@ -86,7 +241,11 @@ const Index = () => {
         </div>
 
         {/* Leaderboard */}
-        <LeaderboardTable players={mockPlayers} currentPlayerId="current" />
+        <LeaderboardTable
+          players={mockPlayers}
+          currentPlayerId="current"
+          isLoading={isLoading}
+        />
 
         {/* Load More */}
         <div className="mt-6 text-center">

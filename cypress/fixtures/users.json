@@ -1,0 +1,20 @@
+{
+  "testUser": {
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "password123",
+    "countryCode": "US"
+  },
+  "adminUser": {
+    "username": "admin",
+    "email": "admin@example.com",
+    "password": "admin123",
+    "countryCode": "US"
+  },
+  "newUser": {
+    "username": "newuser",
+    "email": "newuser@example.com",
+    "password": "newuser123",
+    "countryCode": "GB"
+  }
+}

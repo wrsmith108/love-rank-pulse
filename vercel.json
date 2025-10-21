@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "https://api.loverankpulse.com",
+    "VITE_AUTH_DOMAIN": "auth.loverankpulse.com",
+    "VITE_AUTH_CLIENT_ID": "${AUTH_CLIENT_ID}",
+    "VITE_AUTH_AUDIENCE": "${AUTH_AUDIENCE}",
+    "VITE_ENABLE_REAL_TIME_UPDATES": "true",
+    "VITE_ENABLE_COUNTRY_LEADERBOARDS": "true",
+    "VITE_ENABLE_SESSION_LEADERBOARDS": "true",
+    "VITE_ANALYTICS_ID": "${ANALYTICS_ID}"
+  },
+  "github": {
+    "enabled": true,
+    "silent": false
+  }
+}

@@ -1,0 +1,254 @@
+// Prisma Schema for Love Rank Pulse
+// ELO-based competitive ranking system with comprehensive match tracking
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Player model - Core user entity with ELO rating system
+model Player {
+  id       String @id @default(cuid())
+  username String @unique @db.VarChar(50)
+  email    String @unique @db.VarChar(255)
+
+  // Authentication
+  password_hash String @db.VarChar(255)
+
+  // ELO Rating System
+  elo_rating Int @default(1200) // Standard starting ELO
+  rank       Int @default(0) // Overall leaderboard rank
+
+  // Match Statistics
+  matches_played Int @default(0)
+  wins           Int @default(0)
+  losses         Int @default(0)
+  draws          Int @default(0)
+
+  // Player Profile
+  avatar_url   String? @db.VarChar(500)
+  bio          String? @db.VarChar(500)
+  country_code String? @db.VarChar(2)
+
+  // Account Status
+  is_active      Boolean  @default(true)
+  is_verified    Boolean  @default(false)
+  last_active_at DateTime @default(now())
+
+  // Timestamps
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  matches_as_player1  Match[]            @relation("Player1Matches")
+  matches_as_player2  Match[]            @relation("Player2Matches")
+  match_wins          MatchResult[]      @relation("MatchWinner")
+  match_losses        MatchResult[]      @relation("MatchLoser")
+  leaderboard_entries LeaderboardEntry[]
+
+  // Indexes for performance
+  @@index([elo_rating(sort: Desc)], name: "idx_player_elo")
+  @@index([username], name: "idx_player_username")
+  @@index([email], name: "idx_player_email")
+  @@index([rank], name: "idx_player_rank")
+  @@index([is_active, elo_rating(sort: Desc)], name: "idx_active_players_elo")
+  @@index([created_at], name: "idx_player_created")
+  @@map("players")
+}
+
+// Match model - Represents a competitive match between two players
+model Match {
+  id String @id @default(cuid())
+
+  // Player References
+  player1_id String
+  player2_id String
+
+  // Match Status
+  status MatchStatus @default(SCHEDULED)
+
+  // Match Metadata
+  match_type    MatchType @default(RANKED)
+  tournament_id String?
+  round_number  Int?
+
+  // Timing
+  scheduled_at DateTime?
+  started_at   DateTime?
+  completed_at DateTime?
+
+  // Match Configuration
+  best_of    Int  @default(1) // Best of N games
+  time_limit Int? // Time limit in seconds
+
+  // Additional Data
+  notes String? @db.Text
+
+  // Timestamps
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  player1 Player       @relation("Player1Matches", fields: [player1_id], references: [id], onDelete: Cascade)
+  player2 Player       @relation("Player2Matches", fields: [player2_id], references: [id], onDelete: Cascade)
+  result  MatchResult?
+
+  // Indexes
+  @@index([player1_id], name: "idx_match_player1")
+  @@index([player2_id], name: "idx_match_player2")
+  @@index([status], name: "idx_match_status")
+  @@index([scheduled_at], name: "idx_match_scheduled")
+  @@index([completed_at], name: "idx_match_completed")
+  @@index([created_at], name: "idx_match_created")
+  @@index([match_type, status], name: "idx_match_type_status")
+  @@map("matches")
+}
+
+// MatchResult model - Stores the outcome and rating changes
+model MatchResult {
+  id String @id @default(cuid())
+
+  // Match Reference
+  match_id String @unique
+
+  // Result Data
+  winner_id   String? // Null for draws
+  loser_id    String? // Null for draws
+  result_type ResultType @default(WIN)
+
+  // Score Information
+  player1_score Int @default(0)
+  player2_score Int @default(0)
+
+  // ELO Rating Changes
+  rating_change  Int // Absolute rating change (always positive)
+  winner_new_elo Int?
+  loser_new_elo  Int?
+
+  // K-Factor used for calculation
+  k_factor Int @default(32)
+
+  // Additional Metadata
+  verification_status VerificationStatus @default(PENDING)
+  verified_by         String?
+  verified_at         DateTime?
+
+  // Timestamps
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  match  Match   @relation(fields: [match_id], references: [id], onDelete: Cascade)
+  winner Player? @relation("MatchWinner", fields: [winner_id], references: [id], onDelete: SetNull)
+  loser  Player? @relation("MatchLoser", fields: [loser_id], references: [id], onDelete: SetNull)
+
+  // Indexes
+  @@index([match_id], name: "idx_result_match")
+  @@index([winner_id], name: "idx_result_winner")
+  @@index([loser_id], name: "idx_result_loser")
+  @@index([created_at], name: "idx_result_created")
+  @@index([verification_status], name: "idx_result_verification")
+  @@map("match_results")
+}
+
+// LeaderboardEntry model - Denormalized leaderboard data for performance
+model LeaderboardEntry {
+  id String @id @default(cuid())
+
+  // Player Reference
+  player_id String
+
+  // Leaderboard Position
+  rank          Int
+  previous_rank Int?
+  rank_change   Int  @default(0) // Positive = moved up, Negative = moved down
+
+  // Rating Information
+  elo_rating   Int
+  previous_elo Int?
+  peak_elo     Int  @default(1200)
+  lowest_elo   Int  @default(1200)
+
+  // Statistics
+  matches_played Int   @default(0)
+  wins           Int   @default(0)
+  losses         Int   @default(0)
+  draws          Int   @default(0)
+  win_rate       Float @default(0.0) // Calculated as wins / total_matches
+
+  // Streaks
+  current_streak  Int @default(0) // Positive for wins, negative for losses
+  best_win_streak Int @default(0)
+
+  // Leaderboard Metadata
+  season_id        String?         @db.VarChar(50)
+  leaderboard_type LeaderboardType @default(GLOBAL)
+
+  // Activity
+  is_active     Boolean   @default(true)
+  last_match_at DateTime?
+
+  // Timestamps
+  last_updated DateTime @default(now())
+  created_at   DateTime @default(now())
+
+  // Relations
+  player Player @relation(fields: [player_id], references: [id], onDelete: Cascade)
+
+  // Unique Constraints
+  @@unique([player_id, season_id, leaderboard_type], name: "unique_leaderboard_entry")
+  // Indexes for performance
+  @@index([rank], name: "idx_leaderboard_rank")
+  @@index([elo_rating(sort: Desc)], name: "idx_leaderboard_elo")
+  @@index([player_id], name: "idx_leaderboard_player")
+  @@index([season_id, leaderboard_type, rank], name: "idx_season_leaderboard")
+  @@index([leaderboard_type, is_active, elo_rating(sort: Desc)], name: "idx_active_leaderboard")
+  @@index([last_updated], name: "idx_leaderboard_updated")
+  @@map("leaderboard_entries")
+}
+
+// Enums
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  FORFEIT
+  NO_SHOW
+}
+
+enum MatchType {
+  RANKED
+  UNRANKED
+  TOURNAMENT
+  FRIENDLY
+  PRACTICE
+}
+
+enum ResultType {
+  WIN
+  LOSS
+  DRAW
+  FORFEIT
+  NO_CONTEST
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  DISPUTED
+  REJECTED
+}
+
+enum LeaderboardType {
+  GLOBAL
+  SEASONAL
+  WEEKLY
+  MONTHLY
+  REGIONAL
+}

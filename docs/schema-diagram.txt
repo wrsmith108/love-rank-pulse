@@ -1,0 +1,253 @@
+# Love Rank Pulse - Database Schema Diagram
+
+## Entity Relationship Diagram (ERD)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                              PLAYER                                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│ PK  id (CUID)                                                           │
+│ U   username (VARCHAR 50)                                                │
+│ U   email (VARCHAR 255)                                                  │
+│     elo_rating (INT) DEFAULT 1200                                       │
+│     rank (INT) DEFAULT 0                                                 │
+│     matches_played (INT) DEFAULT 0                                      │
+│     wins (INT) DEFAULT 0                                                 │
+│     losses (INT) DEFAULT 0                                               │
+│     draws (INT) DEFAULT 0                                                │
+│     avatar_url (VARCHAR 500) NULL                                        │
+│     bio (VARCHAR 500) NULL                                               │
+│     country_code (VARCHAR 2) NULL                                        │
+│     is_active (BOOLEAN) DEFAULT true                                    │
+│     is_verified (BOOLEAN) DEFAULT false                                 │
+│     last_active_at (TIMESTAMP) DEFAULT now()                            │
+│     created_at (TIMESTAMP) DEFAULT now()                                │
+│     updated_at (TIMESTAMP) AUTO                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│ INDEXES:                                                                 │
+│   idx_player_elo (elo_rating DESC)                                      │
+│   idx_player_username (username)                                         │
+│   idx_player_email (email)                                               │
+│   idx_player_rank (rank)                                                 │
+│   idx_active_players_elo (is_active, elo_rating DESC)                   │
+│   idx_player_created (created_at)                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+                │                    │
+                │ 1                  │ 1
+                │                    │
+                ▼ M                  ▼ M
+┌──────────────────────────┐    ┌──────────────────────────┐
+│         MATCH            │    │   LEADERBOARD_ENTRY      │
+├──────────────────────────┤    ├──────────────────────────┤
+│ PK  id (CUID)           │    │ PK  id (CUID)           │
+│ FK  player1_id          │    │ FK  player_id           │
+│ FK  player2_id          │    │     rank (INT)           │
+│     status (ENUM)       │    │     previous_rank (INT)  │
+│     match_type (ENUM)   │    │     rank_change (INT)    │
+│     tournament_id       │    │     elo_rating (INT)     │
+│     round_number        │    │     previous_elo (INT)   │
+│     scheduled_at        │    │     peak_elo (INT)       │
+│     started_at          │    │     lowest_elo (INT)     │
+│     completed_at        │    │     matches_played (INT) │
+│     best_of (INT)       │    │     wins (INT)           │
+│     time_limit (INT)    │    │     losses (INT)         │
+│     notes (TEXT)        │    │     draws (INT)          │
+│     created_at          │    │     win_rate (FLOAT)     │
+│     updated_at          │    │     current_streak (INT) │
+├──────────────────────────┤    │     best_win_streak      │
+│ INDEXES:                 │    │     season_id (VARCHAR)  │
+│   idx_match_player1      │    │     leaderboard_type     │
+│   idx_match_player2      │    │     is_active (BOOLEAN)  │
+│   idx_match_status       │    │     last_match_at        │
+│   idx_match_scheduled    │    │     last_updated         │
+│   idx_match_completed    │    │     created_at           │
+│   idx_match_created      │    ├──────────────────────────┤
+│   idx_match_type_status  │    │ UNIQUE:                  │
+└──────────────────────────┘    │   (player_id, season_id, │
+                │                │    leaderboard_type)     │
+                │ 1              ├──────────────────────────┤
+                │                │ INDEXES:                 │
+                ▼ 1              │   idx_leaderboard_rank   │
+┌──────────────────────────┐    │   idx_leaderboard_elo    │
+│     MATCH_RESULT         │    │   idx_leaderboard_player │
+├──────────────────────────┤    │   idx_season_leaderboard │
+│ PK  id (CUID)           │    │   idx_active_leaderboard │
+│ FK  match_id (UNIQUE)   │    │   idx_leaderboard_updated│
+│ FK  winner_id (NULL)    │    └──────────────────────────┘
+│ FK  loser_id (NULL)     │
+│     result_type (ENUM)  │
+│     player1_score       │
+│     player2_score       │
+│     rating_change       │
+│     winner_new_elo      │
+│     loser_new_elo       │
+│     k_factor (INT) = 32 │
+│     verification_status │
+│     verified_by         │
+│     verified_at         │
+│     created_at          │
+│     updated_at          │
+├──────────────────────────┤
+│ INDEXES:                 │
+│   idx_result_match       │
+│   idx_result_winner      │
+│   idx_result_loser       │
+│   idx_result_created     │
+│   idx_result_verification│
+└──────────────────────────┘
+
+## Relationships
+
+1. Player (1) ──────< (M) Match.player1_id
+2. Player (1) ──────< (M) Match.player2_id
+3. Match (1) ───────< (1) MatchResult.match_id [ONE-TO-ONE]
+4. Player (1) ──────< (M) MatchResult.winner_id [NULLABLE]
+5. Player (1) ──────< (M) MatchResult.loser_id [NULLABLE]
+6. Player (1) ──────< (M) LeaderboardEntry.player_id
+
+## Cascade Rules
+
+### ON DELETE CASCADE:
+- Player deleted → All their matches deleted
+- Player deleted → All their match results deleted
+- Player deleted → All their leaderboard entries deleted
+- Match deleted → Match result deleted
+
+### ON DELETE SET NULL:
+- Player deleted → MatchResult.winner_id = NULL (preserves stats)
+- Player deleted → MatchResult.loser_id = NULL (preserves stats)
+
+## Enums
+
+### MatchStatus
+- SCHEDULED: Match scheduled but not started
+- IN_PROGRESS: Match currently being played
+- COMPLETED: Match finished with result
+- CANCELLED: Match cancelled before start
+- FORFEIT: One player forfeited
+- NO_SHOW: One or both players didn't show
+
+### MatchType
+- RANKED: Affects ELO rating
+- UNRANKED: Casual match, no rating change
+- TOURNAMENT: Part of tournament bracket
+- FRIENDLY: Private match between friends
+- PRACTICE: Training match
+
+### ResultType
+- WIN: Normal victory
+- LOSS: Normal defeat
+- DRAW: Tied result
+- FORFEIT: Victory by opponent forfeit
+- NO_CONTEST: Match invalidated
+
+### VerificationStatus
+- PENDING: Awaiting verification
+- VERIFIED: Result confirmed
+- DISPUTED: Result contested
+- REJECTED: Result invalidated
+
+### LeaderboardType
+- GLOBAL: All-time global leaderboard
+- SEASONAL: Season-based rankings
+- WEEKLY: Weekly top players
+- MONTHLY: Monthly rankings
+- REGIONAL: Region-specific leaderboard
+
+## Data Flow: Match Completion
+
+```
+1. Match Created (SCHEDULED)
+   ↓
+2. Match Started (IN_PROGRESS)
+   ↓
+3. Match Completed (COMPLETED)
+   ↓
+4. MatchResult Created
+   ├─ Calculate ELO change
+   ├─ Store winner_new_elo
+   └─ Store loser_new_elo
+   ↓
+5. Update Player Records
+   ├─ player.elo_rating = winner_new_elo
+   ├─ player.wins += 1
+   ├─ player.matches_played += 1
+   └─ player.updated_at = now()
+   ↓
+6. Update LeaderboardEntry
+   ├─ previous_elo = current elo_rating
+   ├─ elo_rating = winner_new_elo
+   ├─ wins += 1
+   ├─ matches_played += 1
+   ├─ win_rate = wins / matches_played
+   ├─ current_streak += 1 (or reset)
+   └─ last_updated = now()
+   ↓
+7. Recalculate Ranks
+   ├─ Sort by elo_rating DESC
+   ├─ Update rank for affected players
+   └─ Store previous_rank, rank_change
+```
+
+## Query Optimization Examples
+
+### Top 100 Leaderboard (Global)
+```sql
+SELECT * FROM leaderboard_entries
+WHERE leaderboard_type = 'GLOBAL'
+  AND is_active = true
+ORDER BY rank ASC
+LIMIT 100;
+
+-- Uses: idx_active_leaderboard (composite)
+-- Performance: <50ms
+```
+
+### Player Match History
+```sql
+SELECT m.*, mr.* FROM matches m
+LEFT JOIN match_results mr ON m.id = mr.match_id
+WHERE (m.player1_id = $1 OR m.player2_id = $1)
+  AND m.status = 'COMPLETED'
+ORDER BY m.completed_at DESC
+LIMIT 20;
+
+-- Uses: idx_match_player1, idx_match_player2, idx_match_completed
+-- Performance: <30ms
+```
+
+### Player Current Rank
+```sql
+SELECT rank, elo_rating, rank_change
+FROM leaderboard_entries
+WHERE player_id = $1
+  AND leaderboard_type = 'GLOBAL'
+  AND season_id IS NULL;
+
+-- Uses: idx_leaderboard_player
+-- Performance: <10ms
+```
+
+### Recent Match Results
+```sql
+SELECT mr.*, p1.username as winner, p2.username as loser
+FROM match_results mr
+JOIN players p1 ON mr.winner_id = p1.id
+JOIN players p2 ON mr.loser_id = p2.id
+WHERE mr.verification_status = 'VERIFIED'
+ORDER BY mr.created_at DESC
+LIMIT 50;
+
+-- Uses: idx_result_verification, idx_result_created
+-- Performance: <40ms
+```
+
+---
+
+**Legend:**
+- PK: Primary Key
+- FK: Foreign Key
+- U: Unique Constraint
+- M: Many (One-to-Many relationship)
+- 1: One (One-to-One or Many-to-One relationship)
+```

@@ -15,4 +15,27 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      external: [
+        // Exclude backend/server-side dependencies from frontend build
+        /^node:/,
+        'express',
+        'express-rate-limit',
+        '@prisma/client',
+        'bcrypt',
+        'bcryptjs',
+        'jsonwebtoken',
+        'ioredis',
+      ],
+    },
+  },
+  optimizeDeps: {
+    exclude: [
+      // Exclude backend packages from optimization
+      '@prisma/client',
+      'bcryptjs',
+      'express-rate-limit',
+    ],
+  },
 }));
