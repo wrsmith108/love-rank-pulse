@@ -47,17 +47,17 @@ export const LeaderboardRow = ({
     >
       {/* Rank */}
       <div className="flex items-center justify-center">
-        {rank <= 3 ? (
-          getRankIcon(rank)
-        ) : (
-          <span className="text-sm font-semibold text-muted-foreground">#{rank}</span>
-        )}
+      {rank <= 3 ? (
+        getRankIcon(rank)
+      ) : (
+        <span className="text-base font-semibold text-muted-foreground">#{rank}</span>
+      )}
       </div>
 
       {/* Player */}
       <div className="col-span-2 flex items-center gap-2">
-        <span className="text-lg">{getCountryFlag(countryCode)}</span>
-        <span className="text-sm font-medium truncate">{playerName}</span>
+        <span className="text-xl">{getCountryFlag(countryCode)}</span>
+        <span className="text-base font-medium truncate">{playerName}</span>
       </div>
 
       {/* K/D Ratio */}
@@ -69,7 +69,7 @@ export const LeaderboardRow = ({
             <TrendingDown className="w-4 h-4 text-destructive" />
           )}
           <span
-            className={`text-sm font-bold ${
+            className={`text-base font-bold ${
               isPositiveKD ? "text-success" : "text-destructive"
             }`}
           >
@@ -80,12 +80,12 @@ export const LeaderboardRow = ({
 
       {/* Kills */}
       <div className="flex items-center justify-center">
-        <span className="text-sm text-foreground">{kills}</span>
+        <span className="text-base text-foreground">{kills}</span>
       </div>
 
       {/* Deaths */}
       <div className="flex items-center justify-center">
-        <span className="text-sm text-muted-foreground">{deaths}</span>
+        <span className="text-base text-muted-foreground">{deaths}</span>
       </div>
 
       {/* W/L */}
