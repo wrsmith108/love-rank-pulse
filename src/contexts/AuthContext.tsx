@@ -119,12 +119,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const authResponse = playerService.login(credentials);
+      const authResponse = await playerService.login(credentials);
       saveAuthData(authResponse);
       setIsAuthenticated(true);
-      setCurrentUser(playerService.getCurrentUser());
+      setCurrentUser(authResponse.user);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
       setIsAuthenticated(false);
@@ -140,12 +140,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (data: RegistrationData) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const authResponse = playerService.register(data);
+      const authResponse = await playerService.register(data);
       saveAuthData(authResponse);
       setIsAuthenticated(true);
-      setCurrentUser(playerService.getCurrentUser());
+      setCurrentUser(authResponse.user);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
       setIsAuthenticated(false);
@@ -160,9 +160,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const logout = async () => {
     setIsLoading(true);
-    
+
     try {
-      playerService.logout();
+      // Clear local auth data
       clearAuthData();
       setIsAuthenticated(false);
       setCurrentUser(null);

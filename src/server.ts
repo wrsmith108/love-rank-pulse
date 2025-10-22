@@ -1,5 +1,6 @@
 import express, { Application } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { createServer } from 'http';
 
 // Middleware imports
 import { applySecurity } from './middleware/security';
@@ -8,6 +9,9 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 // Routes import
 import routes from './routes';
+
+// WebSocket import
+import { initializeWebSocketServer } from './websocket/server';
 
 /**
  * Environment configuration with validation
@@ -79,13 +83,21 @@ const startServer = async () => {
     await prisma.$connect();
     console.log('✓ Database connected successfully');
 
+    // Create HTTP server
+    const httpServer = createServer(app);
+
+    // Initialize WebSocket server
+    const io = initializeWebSocketServer(httpServer);
+    console.log('✓ WebSocket server initialized');
+
     // Start listening
-    const server = app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log('='.repeat(50));
       console.log(`🚀 Love Rank Pulse API Server`);
       console.log('='.repeat(50));
       console.log(`Environment: ${NODE_ENV}`);
-      console.log(`Server running on port: ${PORT}`);
+      console.log(`HTTP Server: http://localhost:${PORT}`);
+      console.log(`WebSocket Server: ws://localhost:${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/api/health`);
       console.log(`API Base URL: http://localhost:${PORT}/api`);
       console.log('='.repeat(50));
@@ -95,8 +107,14 @@ const startServer = async () => {
     const gracefulShutdown = async (signal: string) => {
       console.log(`\n${signal} received. Starting graceful shutdown...`);
 
-      server.close(async () => {
+      // Close HTTP server
+      httpServer.close(async () => {
         console.log('HTTP server closed');
+
+        // Close WebSocket connections
+        const { getWebSocketServer } = await import('./websocket/server');
+        await getWebSocketServer().shutdown();
+        console.log('WebSocket server closed');
 
         // Disconnect Prisma
         await prisma.$disconnect();
