@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-// import { playerService } from '@/services'; // Temporarily disabled for frontend-only build
+import { playerService } from '@/services';
 import { Player, AuthResponse, LoginCredentials, RegistrationData } from '@/models';
 
 // Define the shape of our authentication context

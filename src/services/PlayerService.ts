@@ -35,7 +35,7 @@ interface EmailVerificationToken {
  * Uses Prisma for database operations, bcrypt for password hashing, and JWT for authentication
  */
 export class PlayerService {
-  private readonly SALT_ROUNDS = 10;
+  private readonly SALT_ROUNDS = 12; // Increased to 12 rounds for better security
   private readonly JWT_SECRET: string;
   private readonly JWT_EXPIRATION = '24h';
   private readonly RESET_TOKEN_EXPIRATION = 3600000; // 1 hour in milliseconds
@@ -102,6 +102,44 @@ export class PlayerService {
     } catch (error) {
       console.error('JWT verification failed:', error);
       return null;
+    }
+  }
+
+  /**
+   * Validate a JWT token and check if it's still valid
+   * @param token JWT token to validate
+   * @returns Object with validation status and user info if valid
+   */
+  async validateToken(token: string): Promise<{ valid: boolean; userId?: string; username?: string; email?: string; error?: string }> {
+    try {
+      const decoded = this.verifyJWT(token);
+
+      if (!decoded) {
+        return { valid: false, error: 'Invalid or expired token' };
+      }
+
+      // Check if user still exists and is active
+      const player = await prisma.player.findUnique({
+        where: { id: decoded.userId }
+      });
+
+      if (!player) {
+        return { valid: false, error: 'User not found' };
+      }
+
+      if (!player.is_active) {
+        return { valid: false, error: 'Account is deactivated' };
+      }
+
+      return {
+        valid: true,
+        userId: decoded.userId,
+        username: decoded.username,
+        email: decoded.email
+      };
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return { valid: false, error: 'Token validation failed' };
     }
   }
 
@@ -527,6 +565,103 @@ export class PlayerService {
   }
 
   /**
+   * Update a player's ELO rating
+   * @param playerId The ID of the player to update
+   * @param newRating The new ELO rating
+   * @param wonMatch Whether the player won the match (for stats update)
+   * @returns The updated player or null if not found
+   */
+  async updateEloRating(playerId: string, newRating: number, wonMatch?: boolean): Promise<Player | null> {
+    try {
+      // Ensure rating is within valid range (typically 0-3000)
+      const validatedRating = Math.max(0, Math.min(3000, Math.round(newRating)));
+
+      // Update ELO rating and match statistics
+      const updateData: any = {
+        elo_rating: validatedRating,
+        matches_played: { increment: 1 }
+      };
+
+      // Update win/loss stats if provided
+      if (wonMatch === true) {
+        updateData.wins = { increment: 1 };
+      } else if (wonMatch === false) {
+        updateData.losses = { increment: 1 };
+      }
+
+      const player = await prisma.player.update({
+        where: { id: playerId },
+        data: updateData
+      });
+
+      // Update leaderboard entry if it exists
+      await this.updateLeaderboardEntry(playerId);
+
+      return this.mapPrismaPlayerToModel(player);
+    } catch (error) {
+      console.error('Error updating ELO rating:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update or create a leaderboard entry for a player
+   * @param playerId The ID of the player
+   * @private
+   */
+  private async updateLeaderboardEntry(playerId: string): Promise<void> {
+    try {
+      const player = await prisma.player.findUnique({
+        where: { id: playerId }
+      });
+
+      if (!player) return;
+
+      // Calculate win rate
+      const winRate = player.matches_played > 0
+        ? (player.wins / player.matches_played) * 100
+        : 0;
+
+      // Update or create leaderboard entry
+      await prisma.leaderboardEntry.upsert({
+        where: {
+          unique_leaderboard_entry: {
+            player_id: playerId,
+            season_id: null, // Global leaderboard
+            leaderboard_type: 'GLOBAL'
+          }
+        },
+        update: {
+          elo_rating: player.elo_rating,
+          matches_played: player.matches_played,
+          wins: player.wins,
+          losses: player.losses,
+          draws: player.draws,
+          win_rate: winRate,
+          last_updated: new Date()
+        },
+        create: {
+          player_id: playerId,
+          rank: 0, // Will be calculated by leaderboard service
+          elo_rating: player.elo_rating,
+          peak_elo: player.elo_rating,
+          lowest_elo: player.elo_rating,
+          matches_played: player.matches_played,
+          wins: player.wins,
+          losses: player.losses,
+          draws: player.draws,
+          win_rate: winRate,
+          leaderboard_type: 'GLOBAL',
+          is_active: true
+        }
+      });
+    } catch (error) {
+      console.error('Error updating leaderboard entry:', error);
+      // Don't throw - this is a secondary operation
+    }
+  }
+
+  /**
    * Generate a password reset token
    * @param email User email
    * @returns Reset token
@@ -558,7 +693,8 @@ export class PlayerService {
       return token;
     } catch (error) {
       console.error('Error generating reset token:', error);
-      throw new Error('Failed to generate reset token');
+      // Re-throw original error to preserve error message
+      throw error;
     }
   }
 
@@ -594,7 +730,8 @@ export class PlayerService {
       return true;
     } catch (error) {
       console.error('Error resetting password:', error);
-      throw new Error('Failed to reset password');
+      // Re-throw original error to preserve error message
+      throw error;
     }
   }
 

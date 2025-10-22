@@ -18,8 +18,15 @@ export default {
     }],
   },
   testMatch: [
-    '**/__tests__/**/*.+(ts|tsx|js)',
+    '**/__tests__/**/*.(spec|test).+(ts|tsx|js)',
     '**/?(*.)+(spec|test).+(ts|tsx|js)'
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/__tests__/utils/',
+    '/__tests__/mocks/',
+    '/__tests__/types/',
+    '/__tests__/fixtures/'
   ],
   collectCoverage: true,
   collectCoverageFrom: [
