@@ -3,7 +3,17 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
+  "builds": [
+    {
+      "src": "api/**/*.ts",
+      "use": "@vercel/node"
+    }
+  ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
     {
       "src": "/(.*)",
       "dest": "/index.html"
@@ -17,7 +27,8 @@
     "VITE_ENABLE_REAL_TIME_UPDATES": "true",
     "VITE_ENABLE_COUNTRY_LEADERBOARDS": "true",
     "VITE_ENABLE_SESSION_LEADERBOARDS": "true",
-    "VITE_ANALYTICS_ID": "${ANALYTICS_ID}"
+    "VITE_ANALYTICS_ID": "${ANALYTICS_ID}",
+    "DATABASE_URL": "@database_url"
   },
   "github": {
     "enabled": true,
