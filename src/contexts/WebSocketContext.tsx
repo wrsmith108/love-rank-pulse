@@ -31,7 +31,14 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     try {
-      const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
+      const wsUrl = import.meta.env.VITE_WS_URL;
+
+      // Skip WebSocket connection if no URL is configured (MVP deployment)
+      if (!wsUrl) {
+        console.log('WebSocket URL not configured, skipping connection');
+        return;
+      }
+
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {

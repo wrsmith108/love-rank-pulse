@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { playerService } from '@/services';
+import { apiClient } from '@/utils/apiClient';
 import { AuthResponse, LoginCredentials, RegistrationData } from '@/models';
 
 // User type from AuthResponse
@@ -124,7 +124,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const authResponse = await playerService.login(credentials);
+      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+      const authResponse = response.data;
       saveAuthData(authResponse);
       setIsAuthenticated(true);
       setCurrentUser(authResponse.user);
@@ -145,7 +146,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const authResponse = await playerService.register(data);
+      const response = await apiClient.post<AuthResponse>('/auth/register', data);
+      const authResponse = response.data;
       saveAuthData(authResponse);
       setIsAuthenticated(true);
       setCurrentUser(authResponse.user);

@@ -33,7 +33,8 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <WebSocketProvider autoConnect={true}>
+        {/* WebSocket disabled for MVP deployment - no WebSocket server */}
+        <WebSocketProvider autoConnect={false}>
           <Toaster />
           <Sonner />
           <BrowserRouter>
