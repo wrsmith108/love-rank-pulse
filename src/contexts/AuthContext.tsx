@@ -1,15 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { playerService } from '@/services';
-import { Player, AuthResponse, LoginCredentials, RegistrationData } from '@/models';
+import { AuthResponse, LoginCredentials, RegistrationData } from '@/models';
+
+// User type from AuthResponse
+type AuthUser = AuthResponse['user'];
 
 // Define the shape of our authentication context
 interface AuthContextType {
   // State
   isAuthenticated: boolean;
-  currentUser: Player | null;
+  currentUser: AuthUser | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Methods
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegistrationData) => Promise<void>;
@@ -47,7 +50,7 @@ const EXPIRES_AT_KEY = 'love-rank-pulse-expires-at';
  */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<Player | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 

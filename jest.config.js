@@ -28,6 +28,9 @@ export default {
     '/__tests__/types/',
     '/__tests__/fixtures/'
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(msw|@mswjs|until-async)/)'
+  ],
   collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
