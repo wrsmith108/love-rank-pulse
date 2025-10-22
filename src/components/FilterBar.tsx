@@ -2,7 +2,7 @@ import * as React from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Clock, Filter, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Clock, Filter, RefreshCw, SlidersHorizontal, Globe } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -11,9 +11,23 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 export type TimePeriod = "session" | "hour" | "today" | "week" | "month" | "all";
 export type SortOption = "rank" | "kd" | "kills" | "wins";
+
+// Popular countries for quick selection
+const POPULAR_COUNTRIES = [
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "JP", name: "Japan" },
+  { code: "KR", name: "South Korea" },
+  { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" },
+  { code: "BR", name: "Brazil" },
+];
 
 interface FilterBarProps {
   timePeriod: TimePeriod;
@@ -24,6 +38,9 @@ interface FilterBarProps {
   onRefresh?: () => void;
   showOnlyFriends?: boolean;
   onToggleFriends?: (value: boolean) => void;
+  activeTab?: "session" | "country" | "global";
+  countryCode?: string;
+  onCountryChange?: (code: string) => void;
 }
 
 export const FilterBar = ({
@@ -34,14 +51,56 @@ export const FilterBar = ({
   onSortChange = () => {},
   onRefresh = () => {},
   showOnlyFriends = false,
-  onToggleFriends = () => {}
+  onToggleFriends = () => {},
+  activeTab = "global",
+  countryCode = "US",
+  onCountryChange = () => {}
 }: FilterBarProps) => {
   const isMobile = useIsMobile();
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+  const [countrySearch, setCountrySearch] = React.useState("");
+
+  const filteredCountries = POPULAR_COUNTRIES.filter(country =>
+    country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+    country.code.toLowerCase().includes(countrySearch.toLowerCase())
+  );
 
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
       <div className="flex items-center gap-3 flex-wrap">
+        {/* Country Selector - Only show for country tab */}
+        {activeTab === "country" && (
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-muted-foreground" />
+            <Select value={countryCode} onValueChange={onCountryChange}>
+              <SelectTrigger className={`${isMobile ? 'w-32' : 'w-40'} bg-secondary border-border`}>
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent>
+                <div className="px-2 pb-2">
+                  <Input
+                    placeholder="Search country..."
+                    value={countrySearch}
+                    onChange={(e) => setCountrySearch(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                {filteredCountries.length > 0 ? (
+                  filteredCountries.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.code} - {country.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                    No countries found
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Time Period Selector */}
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-muted-foreground" />
@@ -134,7 +193,34 @@ export const FilterBar = ({
             <PopoverContent className="w-72">
               <div className="space-y-4">
                 <h4 className="font-medium">Filter Options</h4>
-                
+
+                {/* Country Selector - Mobile */}
+                {activeTab === "country" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="mobile-country">Country</Label>
+                    <Select value={countryCode} onValueChange={onCountryChange}>
+                      <SelectTrigger id="mobile-country" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <div className="px-2 pb-2">
+                          <Input
+                            placeholder="Search country..."
+                            value={countrySearch}
+                            onChange={(e) => setCountrySearch(e.target.value)}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        {filteredCountries.map((country) => (
+                          <SelectItem key={country.code} value={country.code}>
+                            {country.code} - {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 {/* Sort Options */}
                 <div className="space-y-2">
                   <Label htmlFor="mobile-sort">Sort by</Label>
@@ -150,7 +236,7 @@ export const FilterBar = ({
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {/* Friends Toggle */}
                 <div className="flex items-center justify-between">
                   <Label htmlFor="mobile-friends-only">Friends Only</Label>
@@ -160,7 +246,7 @@ export const FilterBar = ({
                     onCheckedChange={onToggleFriends}
                   />
                 </div>
-                
+
                 <div className="pt-2 flex justify-end">
                   <Button
                     size="sm"

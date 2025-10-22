@@ -3,7 +3,13 @@ import { Header } from "@/components/Header";
 import { FilterBar, TimePeriod, SortOption } from "@/components/FilterBar";
 import { LeaderboardTable, Player } from "@/components/LeaderboardTable";
 import { MyStatsModal, PlayerStats } from "@/components/MyStatsModal";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { useRealtimeLeaderboard } from "@/hooks/useRealtimeLeaderboard";
+import { useLiveMatchEvents } from "@/hooks/useLiveMatchEvents";
+import { RankChangeEvent, LeaderboardUpdateEvent, SubscriptionScope } from "@/contexts/WebSocketContext";
 
 // Enhanced mock data for demonstration
 const mockPlayers: Player[] = [
@@ -186,89 +192,224 @@ const Index = () => {
   const [sortBy, setSortBy] = React.useState<SortOption>("rank");
   const [showOnlyFriends, setShowOnlyFriends] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [players, setPlayers] = React.useState<Player[]>(mockPlayers);
+  const [currentSessionId] = React.useState("4721");
+  const [countryCode, setCountryCode] = React.useState("US");
+
+  // WebSocket connection
+  const { isConnected, connectionState } = useWebSocket();
+
+  // Map WebSocket connection state to ConnectionStatus state
+  const getConnectionStatusState = () => {
+    if (!connectionState) return "disconnected";
+
+    switch (connectionState) {
+      case "connected":
+        return "connected";
+      case "connecting":
+        return "connecting";
+      case "reconnecting":
+        return "reconnecting";
+      case "disconnected":
+        return "disconnected";
+      default:
+        return "disconnected";
+    }
+  };
+
+  // Get subscription scope based on active tab
+  const getSubscriptionScope = React.useCallback((): SubscriptionScope => {
+    switch (activeTab) {
+      case "session":
+        return `session:${currentSessionId}`;
+      case "country":
+        return `country:${countryCode}`;
+      case "global":
+      default:
+        return "global";
+    }
+  }, [activeTab, currentSessionId, countryCode]);
+
+  // Handle real-time rank changes
+  const handleRankChange = React.useCallback((event: RankChangeEvent) => {
+    console.log("Rank change received:", event);
+    setError(null); // Clear any errors when receiving updates
+    setPlayers(prevPlayers => {
+      const updatedPlayers = prevPlayers.map(player => {
+        if (player.player_id === event.player_id) {
+          return {
+            ...player,
+            rank: event.new_rank,
+            player_name: event.player_name
+          };
+        }
+        return player;
+      });
+      // Re-sort by rank
+      return updatedPlayers.sort((a, b) => a.rank - b.rank);
+    });
+  }, []);
+
+  // Handle full leaderboard updates
+  const handleLeaderboardUpdate = React.useCallback((event: LeaderboardUpdateEvent) => {
+    console.log("Leaderboard update received:", event);
+    setError(null); // Clear any errors when receiving updates
+    if (event.players && event.players.length > 0) {
+      setPlayers(event.players);
+    }
+  }, []);
+
+  // Handle retry
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+
+    // Simulate data refresh
+    setTimeout(() => {
+      setPlayers(mockPlayers);
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  // Handle tab change
+  const handleTabChange = (tab: "session" | "country" | "global") => {
+    setActiveTab(tab);
+    setError(null);
+  };
+
+  // Subscribe to real-time leaderboard updates
+  const { lastUpdate, updateCount } = useRealtimeLeaderboard({
+    scope: getSubscriptionScope(),
+    autoSubscribe: true,
+    onRankChange: handleRankChange,
+    onLeaderboardUpdate: handleLeaderboardUpdate
+  });
+
+  // Subscribe to live match events (only for session tab)
+  const { matchStarted, matchEnded, eventCount } = useLiveMatchEvents({
+    matchId: activeTab === "session" ? currentSessionId : undefined,
+    autoSubscribe: activeTab === "session",
+    onMatchEvent: (event) => {
+      console.log("Match event received:", event);
+    }
+  });
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onMyStatsClick={() => setShowMyStats(true)}
-      />
-
-      <main className="container mx-auto px-4 py-6">
-        {/* Session Info Banner */}
-        {activeTab === "session" && (
-          <div className="mb-4 p-4 bg-card-elevated rounded-lg border border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-muted-foreground">Current Match</div>
-                <div className="text-lg font-bold text-primary">Session #4721</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-success animate-pulse-glow" />
-                <span className="text-sm font-medium text-success">Live</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Filter Bar (only for Country and Global) */}
-        {(activeTab === "country" || activeTab === "global") && (
-          <FilterBar
-            timePeriod={timePeriod}
-            onTimePeriodChange={setTimePeriod}
-            isLive={false}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            showOnlyFriends={showOnlyFriends}
-            onToggleFriends={setShowOnlyFriends}
-            onRefresh={() => {
-              setIsLoading(true);
-              // Simulate refresh delay
-              setTimeout(() => setIsLoading(false), 1000);
-            }}
-          />
-        )}
-
-        {/* Your Position Banner (if not in top 100) */}
-        <div className="mb-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
-          <div className="text-center">
-            <span className="text-sm text-muted-foreground">Your Position: </span>
-            <span className="text-lg font-bold text-primary">
-              #{mockPlayerStats.session_rank} of {mockPlayerStats.total_session_players}
-            </span>
-          </div>
-        </div>
-
-        {/* Leaderboard */}
-        <LeaderboardTable
-          players={mockPlayers}
-          currentPlayerId="current"
-          isLoading={isLoading}
+    <ErrorBoundary onReset={handleRetry}>
+      <div className="min-h-screen bg-background">
+        {/* Connection Status Indicator */}
+        <ConnectionStatus
+          state={getConnectionStatusState() as any}
+          onReconnect={() => window.location.reload()}
         />
 
-        {/* Load More */}
-        <div className="mt-6 text-center">
-          <button className="px-6 py-2 bg-secondary hover:bg-secondary/80 text-foreground font-medium rounded-lg transition-all">
-            Load More
-          </button>
-        </div>
-      </main>
+        <Header
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onMyStatsClick={() => setShowMyStats(true)}
+        />
 
-      {/* My Stats Modal */}
-      <MyStatsModal
-        open={showMyStats}
-        onOpenChange={setShowMyStats}
-        stats={mockPlayerStats}
-      />
+        <main className="container mx-auto px-4 py-6">
+          {/* Session Info Banner */}
+          {activeTab === "session" && (
+            <div className="mb-4 p-4 bg-card-elevated rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-muted-foreground">Current Match</div>
+                  <div className="text-lg font-bold text-primary">Session #{currentSessionId}</div>
+                  {isConnected && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {updateCount} updates • {eventCount} events
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {isConnected ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-success animate-pulse-glow" />
+                      <span className="text-sm font-medium text-success">Live</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-muted" />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {connectionState}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
-      {/* Footer */}
-      <footer className="mt-12 py-6 border-t border-border">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          Last updated: {new Date().toLocaleTimeString()}
-        </div>
-      </footer>
-    </div>
+          {/* Filter Bar (only for Country and Global) */}
+          {(activeTab === "country" || activeTab === "global") && (
+            <FilterBar
+              timePeriod={timePeriod}
+              onTimePeriodChange={setTimePeriod}
+              isLive={false}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              showOnlyFriends={showOnlyFriends}
+              onToggleFriends={setShowOnlyFriends}
+              activeTab={activeTab}
+              countryCode={countryCode}
+              onCountryChange={setCountryCode}
+              onRefresh={handleRetry}
+            />
+          )}
+
+          {/* Your Position Banner (if not in top 100) */}
+          <div className="mb-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
+            <div className="text-center">
+              <span className="text-sm text-muted-foreground">Your Position: </span>
+              <span className="text-lg font-bold text-primary">
+                #{mockPlayerStats.session_rank} of {mockPlayerStats.total_session_players}
+              </span>
+            </div>
+          </div>
+
+          {/* Leaderboard */}
+          <LeaderboardTable
+            players={players}
+            currentPlayerId="current"
+            isLoading={isLoading}
+            error={error}
+            onRetry={handleRetry}
+          />
+
+          {/* Load More */}
+          <div className="mt-6 text-center">
+            <button className="px-6 py-2 bg-secondary hover:bg-secondary/80 text-foreground font-medium rounded-lg transition-all">
+              Load More
+            </button>
+          </div>
+        </main>
+
+        {/* My Stats Modal */}
+        <MyStatsModal
+          open={showMyStats}
+          onOpenChange={setShowMyStats}
+          stats={mockPlayerStats}
+        />
+
+        {/* Footer */}
+        <footer className="mt-12 py-6 border-t border-border">
+          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+            {isConnected && lastUpdate ? (
+              <>
+                Live updates • Scope: {getSubscriptionScope()} • Last update: {lastUpdate.toLocaleTimeString()}
+              </>
+            ) : (
+              <>
+                Scope: {getSubscriptionScope()} • Last updated: {new Date().toLocaleTimeString()}
+              </>
+            )}
+          </div>
+        </footer>
+      </div>
+    </ErrorBoundary>
   );
 };
 
