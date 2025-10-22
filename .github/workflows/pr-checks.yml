@@ -1,0 +1,163 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  pr-info:
+    name: PR Information
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Analyze PR
+        id: analyze
+        run: |
+          # Get PR stats
+          FILES_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
+          LINES_ADDED=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{add+=$1} END {print add}')
+          LINES_DELETED=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{del+=$2} END {print del}')
+
+          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+          echo "lines_added=$LINES_ADDED" >> $GITHUB_OUTPUT
+          echo "lines_deleted=$LINES_DELETED" >> $GITHUB_OUTPUT
+
+      - name: Comment PR stats
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { files_changed, lines_added, lines_deleted } = {
+              files_changed: '${{ steps.analyze.outputs.files_changed }}',
+              lines_added: '${{ steps.analyze.outputs.lines_added }}',
+              lines_deleted: '${{ steps.analyze.outputs.lines_deleted }}'
+            };
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📊 Pull Request Statistics\n\n` +
+                    `- **Files Changed:** ${files_changed}\n` +
+                    `- **Lines Added:** ${lines_added}\n` +
+                    `- **Lines Deleted:** ${lines_deleted}\n\n` +
+                    `CI checks are running... Please wait for all checks to complete.`
+            })
+
+  check-commits:
+    name: Commit Message Convention
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit messages
+        run: |
+          # Check conventional commits format
+          COMMITS=$(git log --format=%s origin/${{ github.base_ref }}..HEAD)
+
+          VALID_PATTERN="^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?: .+"
+
+          echo "$COMMITS" | while read -r commit; do
+            if ! echo "$commit" | grep -Eq "$VALID_PATTERN"; then
+              echo "::warning::Commit message doesn't follow conventional commits: $commit"
+            fi
+          done
+
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies (base)
+        run: npm ci
+
+      - name: Build base
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Get base size
+        id: base-size
+        run: |
+          SIZE=$(du -sb dist | cut -f1)
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (PR)
+        run: npm ci
+
+      - name: Build PR
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Get PR size
+        id: pr-size
+        run: |
+          SIZE=$(du -sb dist | cut -f1)
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+
+      - name: Compare sizes
+        run: |
+          BASE_SIZE=${{ steps.base-size.outputs.size }}
+          PR_SIZE=${{ steps.pr-size.outputs.size }}
+          DIFF=$((PR_SIZE - BASE_SIZE))
+          DIFF_PERCENT=$((DIFF * 100 / BASE_SIZE))
+
+          BASE_MB=$(echo "scale=2; $BASE_SIZE / 1048576" | bc)
+          PR_MB=$(echo "scale=2; $PR_SIZE / 1048576" | bc)
+          DIFF_MB=$(echo "scale=2; $DIFF / 1048576" | bc)
+
+          echo "## 📦 Bundle Size Comparison" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Base:** ${BASE_MB} MB" >> $GITHUB_STEP_SUMMARY
+          echo "- **PR:** ${PR_MB} MB" >> $GITHUB_STEP_SUMMARY
+          echo "- **Difference:** ${DIFF_MB} MB (${DIFF_PERCENT}%)" >> $GITHUB_STEP_SUMMARY
+
+          if [ $DIFF_PERCENT -gt 10 ]; then
+            echo "::warning::Bundle size increased by more than 10%"
+          fi
+
+  label-check:
+    name: PR Label Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const labelNames = labels.map(label => label.name);
+            const requiredTypes = ['feature', 'bugfix', 'hotfix', 'chore', 'docs'];
+
+            const hasTypeLabel = requiredTypes.some(type => labelNames.includes(type));
+
+            if (!hasTypeLabel) {
+              core.warning('PR should have at least one type label: ' + requiredTypes.join(', '));
+            }

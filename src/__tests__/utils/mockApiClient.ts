@@ -234,7 +234,9 @@ export class MockApiClient {
       winRate: 0.75,
       matchesPlayed: 60,
       favoriteWeapon: 'AK-47',
-      averageScore: 417
+      averageScore: 417,
+      rank: 42,
+      eloRating: 1500
     };
 
     return this.buildSuccessResponse(mockStats);

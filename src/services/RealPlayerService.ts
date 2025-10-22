@@ -128,6 +128,114 @@ export class RealPlayerService {
   }
 
   /**
+   * Get multiple players by their IDs
+   */
+  async getPlayersByIds(playerIds: string[]): Promise<PlayerProfile[]> {
+    if (playerIds.length === 0) {
+      return [];
+    }
+
+    try {
+      const players = await prisma.player.findMany({
+        where: { id: { in: playerIds } },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          elo_rating: true,
+          rank: true,
+          avatar_url: true,
+          bio: true,
+          country_code: true,
+          is_active: true,
+          is_verified: true,
+          matches_played: true,
+          wins: true,
+          losses: true,
+          draws: true,
+          created_at: true,
+          last_active_at: true
+        }
+      });
+
+      return players.map(player => ({
+        id: player.id,
+        username: player.username,
+        email: player.email,
+        eloRating: player.elo_rating,
+        rank: player.rank,
+        avatarUrl: player.avatar_url,
+        bio: player.bio,
+        countryCode: player.country_code,
+        isActive: player.is_active,
+        isVerified: player.is_verified,
+        matchesPlayed: player.matches_played,
+        wins: player.wins,
+        losses: player.losses,
+        draws: player.draws,
+        createdAt: player.created_at,
+        lastActiveAt: player.last_active_at
+      }));
+    } catch (error) {
+      console.error('Error fetching players by IDs:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get all players with optional pagination
+   */
+  async getAllPlayers(limit?: number, offset?: number): Promise<PlayerProfile[]> {
+    try {
+      const players = await prisma.player.findMany({
+        skip: offset,
+        take: limit,
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          elo_rating: true,
+          rank: true,
+          avatar_url: true,
+          bio: true,
+          country_code: true,
+          is_active: true,
+          is_verified: true,
+          matches_played: true,
+          wins: true,
+          losses: true,
+          draws: true,
+          created_at: true,
+          last_active_at: true
+        },
+        orderBy: { elo_rating: 'desc' }
+      });
+
+      return players.map(player => ({
+        id: player.id,
+        username: player.username,
+        email: player.email,
+        eloRating: player.elo_rating,
+        rank: player.rank,
+        avatarUrl: player.avatar_url,
+        bio: player.bio,
+        countryCode: player.country_code,
+        isActive: player.is_active,
+        isVerified: player.is_verified,
+        matchesPlayed: player.matches_played,
+        wins: player.wins,
+        losses: player.losses,
+        draws: player.draws,
+        createdAt: player.created_at,
+        lastActiveAt: player.last_active_at
+      }));
+    } catch (error) {
+      console.error('Error fetching all players:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get player statistics
    */
   async getPlayerStats(playerId: string): Promise<PlayerStats | null> {

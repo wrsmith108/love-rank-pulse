@@ -108,10 +108,23 @@ export class PlayerService {
   /**
    * Validate a JWT token and check if it's still valid
    * @param token JWT token to validate
+   * @param checkBlacklist Whether to check if token is blacklisted
    * @returns Object with validation status and user info if valid
    */
-  async validateToken(token: string): Promise<{ valid: boolean; userId?: string; username?: string; email?: string; error?: string }> {
+  async validateToken(
+    token: string,
+    checkBlacklist: boolean = true
+  ): Promise<{ valid: boolean; userId?: string; username?: string; email?: string; error?: string; sessionData?: any }> {
     try {
+      // Check if token is blacklisted (if session management is enabled)
+      if (checkBlacklist) {
+        const { sessionManager } = await import('../lib/sessionManager');
+        const isBlacklisted = await sessionManager.isTokenBlacklisted(token);
+        if (isBlacklisted) {
+          return { valid: false, error: 'Token has been revoked' };
+        }
+      }
+
       const decoded = this.verifyJWT(token);
 
       if (!decoded) {
@@ -131,11 +144,26 @@ export class PlayerService {
         return { valid: false, error: 'Account is deactivated' };
       }
 
+      // Get session data if available
+      let sessionData;
+      try {
+        const { sessionManager } = await import('../lib/sessionManager');
+        sessionData = await sessionManager.getSession(token);
+
+        // Update last activity
+        if (sessionData) {
+          await sessionManager.updateActivity(token);
+        }
+      } catch (error) {
+        console.warn('Failed to get session data:', error);
+      }
+
       return {
         valid: true,
         userId: decoded.userId,
         username: decoded.username,
-        email: decoded.email
+        email: decoded.email,
+        sessionData
       };
     } catch (error) {
       console.error('Token validation error:', error);
@@ -240,6 +268,18 @@ export class PlayerService {
       // Generate JWT token
       const { token, expiresAt } = this.generateJWT(player.id, player.username, player.email);
 
+      // Create session
+      try {
+        const { sessionManager } = await import('../lib/sessionManager');
+        await sessionManager.createSession(token, {
+          userId: player.id,
+          username: player.username,
+          email: player.email
+        });
+      } catch (error) {
+        console.warn('Failed to create session:', error);
+      }
+
       // Return auth response
       return {
         user: {
@@ -306,6 +346,18 @@ export class PlayerService {
 
       // Generate JWT token
       const { token, expiresAt } = this.generateJWT(player.id, player.username, player.email);
+
+      // Create session
+      try {
+        const { sessionManager } = await import('../lib/sessionManager');
+        await sessionManager.createSession(token, {
+          userId: player.id,
+          username: player.username,
+          email: player.email
+        });
+      } catch (error) {
+        console.warn('Failed to create session:', error);
+      }
 
       // Return auth response
       return {
@@ -459,7 +511,220 @@ export class PlayerService {
   }
 
   /**
-   * Get player statistics
+   * Calculate the current winning/losing streak for a player
+   * @param playerId The ID of the player
+   * @returns Current streak (positive for wins, negative for losses)
+   */
+  async calculateCurrentStreak(playerId: string): Promise<number> {
+    try {
+      // Get recent match results ordered by completion date (most recent first)
+      const matches = await prisma.matchResult.findMany({
+        where: {
+          OR: [
+            { winner_id: playerId },
+            { loser_id: playerId }
+          ]
+        },
+        include: {
+          match: {
+            select: {
+              completed_at: true
+            }
+          }
+        },
+        orderBy: {
+          created_at: 'desc'
+        },
+        take: 100 // Look at last 100 matches for streak calculation
+      });
+
+      if (matches.length === 0) {
+        return 0;
+      }
+
+      let currentStreak = 0;
+      let lastResult: 'win' | 'loss' | 'draw' | null = null;
+
+      for (const match of matches) {
+        const isWin = match.winner_id === playerId;
+        const isDraw = match.result_type === 'DRAW';
+        const currentResult = isDraw ? 'draw' : (isWin ? 'win' : 'loss');
+
+        // Initialize on first match
+        if (lastResult === null) {
+          lastResult = currentResult;
+          currentStreak = isDraw ? 0 : (isWin ? 1 : -1);
+          continue;
+        }
+
+        // Continue streak if same result type
+        if (currentResult === lastResult && !isDraw) {
+          currentStreak += isWin ? 1 : -1;
+        } else {
+          // Streak broken
+          break;
+        }
+      }
+
+      return currentStreak;
+    } catch (error) {
+      console.error('Error calculating current streak:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Calculate the best (longest) winning streak for a player
+   * @param playerId The ID of the player
+   * @returns Best winning streak count
+   */
+  async calculateBestStreak(playerId: string): Promise<number> {
+    try {
+      // Get all match results for the player
+      const matches = await prisma.matchResult.findMany({
+        where: {
+          OR: [
+            { winner_id: playerId },
+            { loser_id: playerId }
+          ]
+        },
+        orderBy: {
+          created_at: 'asc'
+        }
+      });
+
+      if (matches.length === 0) {
+        return 0;
+      }
+
+      let bestStreak = 0;
+      let currentWinStreak = 0;
+
+      for (const match of matches) {
+        const isWin = match.winner_id === playerId;
+        const isDraw = match.result_type === 'DRAW';
+
+        if (isWin) {
+          currentWinStreak++;
+          bestStreak = Math.max(bestStreak, currentWinStreak);
+        } else if (!isDraw) {
+          currentWinStreak = 0;
+        }
+      }
+
+      return bestStreak;
+    } catch (error) {
+      console.error('Error calculating best streak:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Calculate the average score for a player across all matches
+   * @param playerId The ID of the player
+   * @returns Average score per match
+   */
+  async calculateAverageScore(playerId: string): Promise<number> {
+    try {
+      // Get all match results where the player participated
+      const matches = await prisma.matchResult.findMany({
+        where: {
+          match: {
+            OR: [
+              { player1_id: playerId },
+              { player2_id: playerId }
+            ]
+          }
+        },
+        include: {
+          match: {
+            select: {
+              player1_id: true,
+              player2_id: true
+            }
+          }
+        }
+      });
+
+      if (matches.length === 0) {
+        return 0;
+      }
+
+      // Calculate total score
+      let totalScore = 0;
+      let matchCount = 0;
+
+      for (const matchResult of matches) {
+        // Determine which score belongs to this player
+        if (matchResult.match.player1_id === playerId) {
+          totalScore += matchResult.player1_score;
+          matchCount++;
+        } else if (matchResult.match.player2_id === playerId) {
+          totalScore += matchResult.player2_score;
+          matchCount++;
+        }
+      }
+
+      // Return average, handle division by zero
+      return matchCount > 0 ? totalScore / matchCount : 0;
+    } catch (error) {
+      console.error('Error calculating average score:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Calculate the total score for a player across all matches
+   * @param playerId The ID of the player
+   * @returns Total cumulative score
+   */
+  async calculateTotalScore(playerId: string): Promise<number> {
+    try {
+      // Get all match results where the player participated
+      const matches = await prisma.matchResult.findMany({
+        where: {
+          match: {
+            OR: [
+              { player1_id: playerId },
+              { player2_id: playerId }
+            ]
+          }
+        },
+        include: {
+          match: {
+            select: {
+              player1_id: true,
+              player2_id: true
+            }
+          }
+        }
+      });
+
+      if (matches.length === 0) {
+        return 0;
+      }
+
+      // Sum up all scores
+      let totalScore = 0;
+
+      for (const matchResult of matches) {
+        // Add the score that belongs to this player
+        if (matchResult.match.player1_id === playerId) {
+          totalScore += matchResult.player1_score;
+        } else if (matchResult.match.player2_id === playerId) {
+          totalScore += matchResult.player2_score;
+        }
+      }
+
+      return totalScore;
+    } catch (error) {
+      console.error('Error calculating total score:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get player statistics with all calculated metrics
    * @param playerId The ID of the player whose stats to retrieve
    * @returns The player's statistics or null if not found
    */
@@ -478,6 +743,14 @@ export class PlayerService {
         ? (player.wins / player.matches_played) * 100
         : 0;
 
+      // Calculate all statistics in parallel for better performance
+      const [currentStreak, bestStreak, averageScore, totalScore] = await Promise.all([
+        this.calculateCurrentStreak(playerId),
+        this.calculateBestStreak(playerId),
+        this.calculateAverageScore(playerId),
+        this.calculateTotalScore(playerId)
+      ]);
+
       return {
         playerId: player.id,
         matchesPlayed: player.matches_played,
@@ -485,14 +758,14 @@ export class PlayerService {
         losses: player.losses,
         draws: player.draws,
         winRate,
-        currentStreak: 0, // TODO: Calculate from match history
-        bestStreak: 0, // TODO: Calculate from match history
-        averageScore: 0, // TODO: Calculate from match results
-        totalScore: 0, // TODO: Calculate from match results
+        currentStreak,
+        bestStreak,
+        averageScore,
+        totalScore,
         rank: player.rank,
         eloRating: player.elo_rating,
-        peakElo: player.elo_rating, // TODO: Track in separate field
-        lowestElo: 1200 // TODO: Track in separate field
+        peakElo: (player as any).peakElo || player.elo_rating,
+        lowestElo: (player as any).lowestElo || 1200
       };
     } catch (error) {
       console.error('Error fetching player stats:', error);
@@ -565,7 +838,7 @@ export class PlayerService {
   }
 
   /**
-   * Update a player's ELO rating
+   * Update a player's ELO rating and track peak/lowest values
    * @param playerId The ID of the player to update
    * @param newRating The new ELO rating
    * @param wonMatch Whether the player won the match (for stats update)
@@ -576,11 +849,32 @@ export class PlayerService {
       // Ensure rating is within valid range (typically 0-3000)
       const validatedRating = Math.max(0, Math.min(3000, Math.round(newRating)));
 
+      // Get current player data to compare peak/lowest ELO
+      const currentPlayer = await prisma.player.findUnique({
+        where: { id: playerId }
+      });
+
+      if (!currentPlayer) {
+        return null;
+      }
+
       // Update ELO rating and match statistics
       const updateData: any = {
         elo_rating: validatedRating,
         matches_played: { increment: 1 }
       };
+
+      // Track peak ELO (highest rating ever achieved)
+      const currentPeakElo = (currentPlayer as any).peakElo || currentPlayer.elo_rating;
+      if (validatedRating > currentPeakElo) {
+        updateData.peakElo = validatedRating;
+      }
+
+      // Track lowest ELO (lowest rating ever achieved)
+      const currentLowestElo = (currentPlayer as any).lowestElo || 1200;
+      if (validatedRating < currentLowestElo) {
+        updateData.lowestElo = validatedRating;
+      }
 
       // Update win/loss stats if provided
       if (wonMatch === true) {
@@ -782,6 +1076,61 @@ export class PlayerService {
     } catch (error) {
       console.error('Error verifying email:', error);
       throw new Error('Failed to verify email');
+    }
+  }
+
+  /**
+   * Logout user and invalidate token
+   * @param token JWT token to invalidate
+   * @returns True if successful
+   */
+  async logout(token: string): Promise<boolean> {
+    try {
+      const { sessionManager } = await import('../lib/sessionManager');
+
+      // Add token to blacklist
+      await sessionManager.blacklistToken(token);
+
+      // Delete session
+      await sessionManager.deleteSession(token);
+
+      console.log('User logged out successfully');
+      return true;
+    } catch (error) {
+      console.error('Logout error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get all active sessions for a user
+   * @param userId User ID
+   * @returns Array of active sessions
+   */
+  async getUserSessions(userId: string): Promise<any[]> {
+    try {
+      const { sessionManager } = await import('../lib/sessionManager');
+      return await sessionManager.getUserSessions(userId);
+    } catch (error) {
+      console.error('Error getting user sessions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Revoke all sessions for a user (force logout everywhere)
+   * @param userId User ID
+   * @returns True if successful
+   */
+  async revokeAllSessions(userId: string): Promise<boolean> {
+    try {
+      const { sessionManager } = await import('../lib/sessionManager');
+      await sessionManager.deleteUserSessions(userId);
+      console.log(`Revoked all sessions for user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error('Error revoking sessions:', error);
+      return false;
     }
   }
 

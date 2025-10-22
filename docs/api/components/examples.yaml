@@ -1,0 +1,110 @@
+PlayerRegistrationRequest:
+  summary: Valid player registration
+  value:
+    username: player123
+    email: player@example.com
+    password: SecurePass123
+    displayName: Pro Gamer
+    countryCode: US
+
+PlayerLoginRequest:
+  summary: Valid login credentials
+  value:
+    email: player@example.com
+    password: SecurePass123
+
+PlayerProfileResponse:
+  summary: Complete player profile
+  value:
+    success: true
+    data:
+      id: 550e8400-e29b-41d4-a716-446655440000
+      username: player123
+      email: player@example.com
+      displayName: Pro Gamer
+      countryCode: US
+      avatarUrl: https://cdn.example.com/avatars/player123.png
+      eloRating: 1450
+      matchesPlayed: 128
+      wins: 76
+      losses: 48
+      draws: 4
+      createdAt: 2024-01-15T10:30:00Z
+      lastActiveAt: 2024-01-20T15:45:00Z
+      isActive: true
+
+CreateMatchRequest:
+  summary: Create a ranked match
+  value:
+    player1Id: 550e8400-e29b-41d4-a716-446655440000
+    player2Id: 660e8400-e29b-41d4-a716-446655440001
+    matchType: RANKED
+    bestOf: 1
+
+SubmitMatchResultRequest:
+  summary: Submit match result with scores
+  value:
+    player1Score: 25
+    player2Score: 18
+
+MatchResultResponse:
+  summary: Match result with ELO changes
+  value:
+    success: true
+    message: Match result submitted successfully
+    data:
+      matchId: 770e8400-e29b-41d4-a716-446655440000
+      winnerId: 550e8400-e29b-41d4-a716-446655440000
+      loserId: 660e8400-e29b-41d4-a716-446655440001
+      player1Score: 25
+      player2Score: 18
+      ratingChange: 24
+      winnerNewElo: 1474
+      loserNewElo: 1426
+      resultType: WIN
+      verificationStatus: VERIFIED
+
+GlobalLeaderboardResponse:
+  summary: Top 3 global players
+  value:
+    success: true
+    data:
+      - rank: 1
+        id: 550e8400-e29b-41d4-a716-446655440000
+        username: pro_gamer_1
+        displayName: Elite Champion
+        countryCode: US
+        avatarUrl: https://cdn.example.com/avatars/1.png
+        eloRating: 2450
+        matchesPlayed: 342
+        wins: 289
+        losses: 45
+        draws: 8
+        winRate: 0.845
+      - rank: 2
+        id: 660e8400-e29b-41d4-a716-446655440001
+        username: ace_shooter
+        displayName: Sharpshooter
+        countryCode: GB
+        eloRating: 2398
+        matchesPlayed: 298
+        wins: 245
+        losses: 48
+        draws: 5
+        winRate: 0.822
+      - rank: 3
+        id: 770e8400-e29b-41d4-a716-446655440002
+        username: sniper_elite
+        displayName: Silent Assassin
+        countryCode: DE
+        eloRating: 2367
+        matchesPlayed: 276
+        wins: 228
+        losses: 43
+        draws: 5
+        winRate: 0.826
+    pagination:
+      page: 1
+      limit: 20
+      total: 15420
+      totalPages: 771

@@ -5,6 +5,11 @@ export * from './PlayerService';
 export * from './MatchService';
 export * from './LeaderboardService';
 
+// Export singleton instances for backward compatibility
+import LeaderboardService from './LeaderboardService';
+export { LeaderboardService };
+export const leaderboardService = new LeaderboardService();
+
 // Export API Gateway adapter
 export * from './ApiGatewayAdapter';
 

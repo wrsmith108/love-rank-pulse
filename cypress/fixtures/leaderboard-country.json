@@ -1,0 +1,44 @@
+{
+  "success": true,
+  "data": [
+    {
+      "player_id": "player-us-1",
+      "player_name": "USAChampion",
+      "country_code": "US",
+      "kills": 52,
+      "deaths": 10,
+      "kd_ratio": 5.2,
+      "is_win": true,
+      "rank": 1,
+      "headshots": 28,
+      "accuracy": 72.5,
+      "score": 5320
+    },
+    {
+      "player_id": "player-us-2",
+      "player_name": "AmericanSniper",
+      "country_code": "US",
+      "kills": 46,
+      "deaths": 14,
+      "kd_ratio": 3.29,
+      "is_win": true,
+      "rank": 2,
+      "headshots": 22,
+      "accuracy": 68.3,
+      "score": 4690
+    },
+    {
+      "player_id": "player-us-3",
+      "player_name": "FreedomFighter",
+      "country_code": "US",
+      "kills": 40,
+      "deaths": 16,
+      "kd_ratio": 2.5,
+      "is_win": true,
+      "rank": 3,
+      "headshots": 19,
+      "accuracy": 64.7,
+      "score": 4120
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "success": true,
+  "data": {
+    "player_id": "player-1",
+    "player_name": "ProGamer123",
+    "country_code": "US",
+    "total_matches": 156,
+    "total_kills": 2340,
+    "total_deaths": 980,
+    "kd_ratio": 2.39,
+    "wins": 89,
+    "losses": 67,
+    "win_rate": 57.05,
+    "headshots": 1245,
+    "headshot_percentage": 53.21,
+    "accuracy": 65.8,
+    "average_score": 3456,
+    "best_killstreak": 15,
+    "favorite_weapon": "AK-47",
+    "playtime_hours": 234,
+    "rank_history": [
+      { "date": "2025-10-15", "rank": 5 },
+      { "date": "2025-10-16", "rank": 3 },
+      { "date": "2025-10-17", "rank": 2 },
+      { "date": "2025-10-18", "rank": 1 },
+      { "date": "2025-10-19", "rank": 1 },
+      { "date": "2025-10-20", "rank": 1 },
+      { "date": "2025-10-21", "rank": 1 },
+      { "date": "2025-10-22", "rank": 1 }
+    ],
+    "performance_trend": "improving"
+  }
+}

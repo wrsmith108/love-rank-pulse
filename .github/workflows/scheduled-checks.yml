@@ -1,0 +1,157 @@
+name: Scheduled Maintenance Checks
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  dependency-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        run: |
+          npm audit --json > audit-results.json || true
+
+          # Check for high/critical vulnerabilities
+          HIGH_VULNS=$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)
+          CRITICAL_VULNS=$(jq '.metadata.vulnerabilities.critical // 0' audit-results.json)
+
+          echo "## 🔒 Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Critical:** $CRITICAL_VULNS" >> $GITHUB_STEP_SUMMARY
+          echo "- **High:** $HIGH_VULNS" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$CRITICAL_VULNS" -gt "0" ] || [ "$HIGH_VULNS" -gt "0" ]; then
+            echo "::error::Found $CRITICAL_VULNS critical and $HIGH_VULNS high vulnerabilities"
+            exit 1
+          fi
+
+      - name: Create issue for vulnerabilities
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Security Vulnerabilities Detected',
+              body: 'Automated security audit found vulnerabilities.\n\nPlease review the [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for details.',
+              labels: ['security', 'dependencies', 'urgent']
+            })
+
+  dependency-updates:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Check for outdated packages
+        run: |
+          npm outdated --json > outdated.json || true
+
+          if [ -s outdated.json ]; then
+            echo "## 📦 Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat outdated.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All dependencies are up to date" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  build-health:
+    name: Build Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+
+      - name: Run build
+        run: npm run build
+
+      - name: Run tests
+        run: npm run test:coverage
+
+      - name: Check test coverage
+        run: |
+          COVERAGE=$(jq '.total.lines.pct' coverage/frontend-integration/coverage-final.json 2>/dev/null || echo "0")
+
+          echo "## 📊 Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Line Coverage:** ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
+
+          if [ $(echo "$COVERAGE < 70" | bc) -eq 1 ]; then
+            echo "::warning::Test coverage is below 70%"
+          fi
+
+  code-quality:
+    name: Code Quality Metrics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint -- --format json > eslint-results.json || true
+
+      - name: Analyze results
+        run: |
+          if [ -f eslint-results.json ]; then
+            ERRORS=$(jq '[.[] | .errorCount] | add // 0' eslint-results.json)
+            WARNINGS=$(jq '[.[] | .warningCount] | add // 0' eslint-results.json)
+
+            echo "## 🔍 Code Quality" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Errors:** $ERRORS" >> $GITHUB_STEP_SUMMARY
+            echo "- **Warnings:** $WARNINGS" >> $GITHUB_STEP_SUMMARY
+
+            if [ "$ERRORS" -gt "0" ]; then
+              echo "::error::Found $ERRORS linting errors"
+            fi
+          fi

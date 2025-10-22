@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>16/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>16/16</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -224,32 +224,32 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -345,32 +345,32 @@ export interface Match {
 /**
  * Game modes available in the system
  */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export enum G</span>ameMode {</span>
-<span class="cstat-no" title="statement not covered" >  DEATHMATCH = 'deathmatch',</span>
-<span class="cstat-no" title="statement not covered" >  TEAM_DEATHMATCH = 'team_deathmatch',</span>
-<span class="cstat-no" title="statement not covered" >  CAPTURE_THE_FLAG = 'capture_the_flag',</span>
-<span class="cstat-no" title="statement not covered" >  DOMINATION = 'domination',</span>
-<span class="cstat-no" title="statement not covered" >  BATTLE_ROYALE = 'battle_royale'</span>
+export enum GameMode {
+  DEATHMATCH = 'deathmatch',
+  TEAM_DEATHMATCH = 'team_deathmatch',
+  CAPTURE_THE_FLAG = 'capture_the_flag',
+  DOMINATION = 'domination',
+  BATTLE_ROYALE = 'battle_royale'
 }
 &nbsp;
 /**
  * Current status of a match
  */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export enum M</span>atchStatus {</span>
-<span class="cstat-no" title="statement not covered" >  PENDING = 'pending',</span>
-<span class="cstat-no" title="statement not covered" >  IN_PROGRESS = 'in_progress',</span>
-<span class="cstat-no" title="statement not covered" >  COMPLETED = 'completed',</span>
-<span class="cstat-no" title="statement not covered" >  CANCELLED = 'cancelled'</span>
+export enum MatchStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled'
 }
 &nbsp;
 /**
  * Difficulty levels for matches
  */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export enum D</span>ifficultyLevel {</span>
-<span class="cstat-no" title="statement not covered" >  CASUAL = 'casual',</span>
-<span class="cstat-no" title="statement not covered" >  NORMAL = 'normal',</span>
-<span class="cstat-no" title="statement not covered" >  COMPETITIVE = 'competitive',</span>
-<span class="cstat-no" title="statement not covered" >  PROFESSIONAL = 'professional'</span>
+export enum DifficultyLevel {
+  CASUAL = 'casual',
+  NORMAL = 'normal',
+  COMPETITIVE = 'competitive',
+  PROFESSIONAL = 'professional'
 }
 &nbsp;
 /**
@@ -433,7 +433,7 @@ export interface WeaponUsage {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-22T01:42:20.464Z
+                at 2025-10-22T21:05:51.175Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

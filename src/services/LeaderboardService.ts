@@ -398,17 +398,20 @@ export class LeaderboardService {
   }
 
   /**
-   * Update leaderboard after ELO rating change
+   * Update leaderboard after ELO rating change with real-time broadcasting
    *
    * @param playerId - Player ID
+   * @param previousElo - Previous ELO rating (for change calculation)
    * @returns Promise<void>
    */
-  async updateLeaderboard(playerId: string): Promise<void> {
-    // Get player data
+  async updateLeaderboard(playerId: string, previousElo?: number): Promise<void> {
+    // Get player data with username for broadcasting
     const player = await this.prisma.player.findUnique({
       where: { id: playerId },
       select: {
         id: true,
+        username: true,
+        avatar_url: true,
         elo_rating: true,
         wins: true,
         losses: true,
@@ -428,6 +431,17 @@ export class LeaderboardService {
       ? (player.wins / player.matches_played) * 100
       : 0;
 
+    // Get previous entry for comparison
+    const previousEntry = await this.prisma.leaderboardEntry.findFirst({
+      where: {
+        player_id: playerId,
+        leaderboard_type: LeaderboardType.GLOBAL,
+      },
+    });
+
+    const previousRank = previousEntry?.rank || 0;
+    const eloChange = previousElo ? player.elo_rating - previousElo : 0;
+
     // Update or create leaderboard entry
     const entry = await this.prisma.leaderboardEntry.upsert({
       where: {
@@ -438,6 +452,7 @@ export class LeaderboardService {
         },
       },
       update: {
+        previous_elo: previousElo || previousEntry?.elo_rating || player.elo_rating,
         elo_rating: player.elo_rating,
         wins: player.wins,
         losses: player.losses,
@@ -446,15 +461,18 @@ export class LeaderboardService {
         win_rate: winRate,
         last_updated: new Date(),
         last_match_at: new Date(),
-        peak_elo: {
-          set: Math.max(player.elo_rating, 1200),
-        },
+        peak_elo: previousEntry
+          ? Math.max(player.elo_rating, previousEntry.peak_elo)
+          : player.elo_rating,
+        lowest_elo: previousEntry
+          ? Math.min(player.elo_rating, previousEntry.lowest_elo)
+          : player.elo_rating,
       },
       create: {
         player_id: playerId,
         rank: 0, // Will be recalculated
         elo_rating: player.elo_rating,
-        previous_elo: player.elo_rating,
+        previous_elo: previousElo || player.elo_rating,
         peak_elo: player.elo_rating,
         lowest_elo: player.elo_rating,
         wins: player.wins,
@@ -471,14 +489,72 @@ export class LeaderboardService {
     // Recalculate ranks for all players
     await this.recalculateRanks(LeaderboardType.GLOBAL, null);
 
+    // Get updated entry with new rank
+    const updatedEntry = await this.prisma.leaderboardEntry.findFirst({
+      where: {
+        player_id: playerId,
+        leaderboard_type: LeaderboardType.GLOBAL,
+      },
+    });
+
+    const rankChange = updatedEntry ? previousRank - updatedEntry.rank : 0;
+
     // Invalidate caches
     await this.invalidateCache('global');
     if (player.country_code) {
       await this.invalidateCache('country', player.country_code);
     }
 
-    // Publish update event
-    await this.publishUpdate(playerId, 'elo_change');
+    // Broadcast real-time update with detailed information
+    await this.broadcastLeaderboardUpdate({
+      type: 'player_update',
+      playerId: player.id,
+      playerData: {
+        id: player.id,
+        username: player.username,
+        avatar_url: player.avatar_url,
+        elo_rating: player.elo_rating,
+        previous_elo: previousElo || player.elo_rating,
+        elo_change: eloChange,
+        rank: updatedEntry?.rank || 0,
+        previous_rank: previousRank,
+        rank_change: rankChange,
+        wins: player.wins,
+        losses: player.losses,
+        win_rate: winRate,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Broadcast leaderboard update via Redis pub/sub
+   *
+   * @param updateData - Update data to broadcast
+   * @returns Promise<void>
+   */
+  private async broadcastLeaderboardUpdate(updateData: any): Promise<void> {
+    try {
+      const redis = await this.ensureRedis();
+
+      // Publish to main leaderboard updates channel
+      await redis.publish(
+        this.PUBSUB_CHANNEL,
+        JSON.stringify(updateData)
+      );
+
+      // Also publish to player-specific channel
+      if (updateData.playerId) {
+        await redis.publish(
+          `leaderboard:player:${updateData.playerId}`,
+          JSON.stringify(updateData)
+        );
+      }
+
+      console.log(`[LeaderboardService] Broadcast update: ${updateData.type}`);
+    } catch (error) {
+      console.warn('[LeaderboardService] Broadcast failed:', error);
+    }
   }
 
   /**

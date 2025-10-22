@@ -1,0 +1,133 @@
+BadRequest:
+  description: Bad request - Invalid input parameters
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Error'
+      examples:
+        validationError:
+          summary: Validation error
+          value:
+            success: false
+            error:
+              code: VALIDATION_ERROR
+              message: Invalid input parameters
+              details:
+                - field: email
+                  message: Email format is invalid
+                - field: password
+                  message: Password must be at least 8 characters
+
+Unauthorized:
+  description: Unauthorized - Authentication required or invalid token
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Error'
+      examples:
+        noToken:
+          summary: No token provided
+          value:
+            success: false
+            error:
+              code: UNAUTHORIZED
+              message: Authentication required
+        invalidToken:
+          summary: Invalid or expired token
+          value:
+            success: false
+            error:
+              code: INVALID_TOKEN
+              message: Invalid or expired authentication token
+
+Forbidden:
+  description: Forbidden - Insufficient permissions
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Error'
+      examples:
+        forbidden:
+          summary: Insufficient permissions
+          value:
+            success: false
+            error:
+              code: FORBIDDEN
+              message: You do not have permission to perform this action
+
+NotFound:
+  description: Resource not found
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Error'
+      examples:
+        playerNotFound:
+          summary: Player not found
+          value:
+            success: false
+            error:
+              code: NOT_FOUND
+              message: Player not found
+        matchNotFound:
+          summary: Match not found
+          value:
+            success: false
+            error:
+              code: NOT_FOUND
+              message: Match not found
+
+Conflict:
+  description: Conflict - Resource already exists
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Error'
+      examples:
+        emailExists:
+          summary: Email already registered
+          value:
+            success: false
+            error:
+              code: CONFLICT
+              message: Email already registered
+        usernameExists:
+          summary: Username already taken
+          value:
+            success: false
+            error:
+              code: CONFLICT
+              message: Username already taken
+
+RateLimitExceeded:
+  description: Rate limit exceeded
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Error'
+      examples:
+        rateLimited:
+          summary: Too many requests
+          value:
+            success: false
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: Too many requests. Please try again later.
+              details:
+                - field: retryAfter
+                  message: Retry after 60 seconds
+
+InternalServerError:
+  description: Internal server error
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Error'
+      examples:
+        serverError:
+          summary: Internal server error
+          value:
+            success: false
+            error:
+              code: INTERNAL_SERVER_ERROR
+              message: An unexpected error occurred. Please try again later.

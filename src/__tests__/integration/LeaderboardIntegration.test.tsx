@@ -65,14 +65,18 @@ describe('Leaderboard Integration Tests', () => {
       // Configure API with delay
       mockApiClient.updateConfig({ delay: 100 });
 
-      renderWithAllProviders(
+      const { container } = renderWithAllProviders(
         <LeaderboardTable players={[]} isLoading={true} />,
         { client: queryClient }
       );
 
-      // Verify loading indicator
-      expect(screen.getByText('Loading leaderboard data...')).toBeInTheDocument();
-      expect(screen.getByRole('generic', { hidden: true })).toHaveClass('animate-spin');
+      // Verify loading skeleton is displayed
+      const skeletons = container.querySelectorAll('.animate-pulse');
+      expect(skeletons.length).toBeGreaterThan(0);
+
+      // Verify loading skeleton structure
+      expect(container.querySelector('.bg-card')).toBeInTheDocument();
+      expect(container.querySelector('.bg-muted')).toBeInTheDocument();
     });
 
     it('should handle empty leaderboard data', async () => {
@@ -81,8 +85,9 @@ describe('Leaderboard Integration Tests', () => {
         { client: queryClient }
       );
 
-      // Verify empty state message
-      expect(screen.getByText('No players found for this leaderboard.')).toBeInTheDocument();
+      // Verify empty state message matches component
+      expect(screen.getByText('No players yet')).toBeInTheDocument();
+      expect(screen.getByText(/This leaderboard is empty/i)).toBeInTheDocument();
     });
 
     it('should handle API errors gracefully', async () => {
@@ -95,13 +100,14 @@ describe('Leaderboard Integration Tests', () => {
         expect(error.message).toBe('Network error');
       }
 
-      // Render error state
+      // Render error state with error prop
       renderWithAllProviders(
-        <LeaderboardTable players={[]} />,
+        <LeaderboardTable players={[]} error="Network error" />,
         { client: queryClient }
       );
 
-      expect(screen.getByText('No players found for this leaderboard.')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load leaderboard')).toBeInTheDocument();
+      expect(screen.getByText('Network error')).toBeInTheDocument();
     });
   });
 
@@ -204,9 +210,12 @@ describe('Leaderboard Integration Tests', () => {
         expect(screen.getByText('ProGamer123')).toBeInTheDocument();
       });
 
-      // Current player row should be present
-      const rows = container.querySelectorAll('[class*="transition-colors"]');
+      // Current player row should be present with transition-all class
+      const rows = container.querySelectorAll('[class*="transition-all"]');
       expect(rows.length).toBeGreaterThan(0);
+
+      // Verify the table has rendered all players
+      expect(container.querySelectorAll('.divide-y > div').length).toBe(players.length);
     });
   });
 
@@ -302,14 +311,18 @@ describe('Leaderboard Integration Tests', () => {
         { client: queryClient }
       );
 
-      const renderTime = performance.now() - startTime;
-
       await waitFor(() => {
         expect(screen.getByText('Player0')).toBeInTheDocument();
       });
 
-      // Rendering should complete in reasonable time
-      expect(renderTime).toBeLessThan(1000); // Less than 1 second
+      const renderTime = performance.now() - startTime;
+
+      // Rendering should complete in reasonable time (relaxed for test environment)
+      expect(renderTime).toBeLessThan(3000); // Less than 3 seconds for test environment
+
+      // Verify all players are rendered
+      expect(screen.getByText('Player0')).toBeInTheDocument();
+      expect(screen.getByText('Player99')).toBeInTheDocument();
     });
   });
 

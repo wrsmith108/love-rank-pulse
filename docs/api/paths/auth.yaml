@@ -1,0 +1,201 @@
+auth_register:
+  post:
+    tags:
+      - Authentication
+    summary: Register a new player
+    description: Create a new player account with email, username, and password. Returns a JWT token for immediate authentication.
+    operationId: registerPlayer
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - username
+              - email
+              - password
+              - displayName
+              - countryCode
+            properties:
+              username:
+                type: string
+                minLength: 3
+                maxLength: 50
+                pattern: '^[a-zA-Z0-9_]+$'
+                description: Unique username (alphanumeric with underscores)
+                example: player123
+              email:
+                type: string
+                format: email
+                description: Valid email address
+                example: player@example.com
+              password:
+                type: string
+                format: password
+                minLength: 8
+                description: Password (min 8 chars, must contain letters and numbers)
+                example: SecurePass123
+              displayName:
+                type: string
+                minLength: 1
+                maxLength: 100
+                description: Display name shown to other players
+                example: Pro Gamer
+              countryCode:
+                type: string
+                pattern: '^[A-Z]{2}$'
+                description: ISO 3166-1 alpha-2 country code
+                example: US
+          examples:
+            validRegistration:
+              summary: Valid registration request
+              value:
+                username: player123
+                email: player@example.com
+                password: SecurePass123
+                displayName: Pro Gamer
+                countryCode: US
+    responses:
+      '201':
+        description: Player registered successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Player registered successfully
+                data:
+                  type: object
+                  properties:
+                    token:
+                      type: string
+                      description: JWT authentication token
+                      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    player:
+                      $ref: '../components/schemas.yaml#/PlayerProfile'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '429':
+        $ref: '../components/responses.yaml#/RateLimitExceeded'
+
+auth_login:
+  post:
+    tags:
+      - Authentication
+    summary: Login a player
+    description: Authenticate with email and password. Returns a JWT token valid for 24 hours.
+    operationId: loginPlayer
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email:
+                type: string
+                format: email
+                description: Player's email address
+                example: player@example.com
+              password:
+                type: string
+                format: password
+                description: Player's password
+                example: SecurePass123
+          examples:
+            validLogin:
+              summary: Valid login request
+              value:
+                email: player@example.com
+                password: SecurePass123
+    responses:
+      '200':
+        description: Login successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Login successful
+                data:
+                  type: object
+                  properties:
+                    token:
+                      type: string
+                      description: JWT authentication token
+                      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    player:
+                      $ref: '../components/schemas.yaml#/PlayerProfile'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '429':
+        $ref: '../components/responses.yaml#/RateLimitExceeded'
+
+auth_logout:
+  post:
+    tags:
+      - Authentication
+    summary: Logout a player
+    description: Logout the current player. Note that JWT tokens are stateless, so logout is handled client-side by removing the token.
+    operationId: logoutPlayer
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Logout successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Logout successful
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+
+auth_me:
+  get:
+    tags:
+      - Authentication
+    summary: Get current user profile
+    description: Retrieve the profile information for the currently authenticated player.
+    operationId: getCurrentUser
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Current user profile retrieved
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../components/schemas.yaml#/PlayerProfile'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'

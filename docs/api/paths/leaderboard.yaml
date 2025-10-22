@@ -1,0 +1,198 @@
+leaderboard_global:
+  get:
+    tags:
+      - Leaderboard
+    summary: Get global leaderboard
+    description: |
+      Retrieve the global leaderboard ranked by ELO rating. Results are cached for 5 minutes for optimal performance.
+
+      **Ranking Algorithm:**
+      1. Primary: ELO rating (descending)
+      2. Tiebreaker 1: Total wins (descending)
+      3. Tiebreaker 2: Account age (ascending)
+    operationId: getGlobalLeaderboard
+    security:
+      - BearerAuth: []
+      - {}
+    parameters:
+      - $ref: '../components/parameters.yaml#/Page'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        description: Global leaderboard retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    $ref: '../components/schemas.yaml#/LeaderboardEntry'
+                pagination:
+                  $ref: '../components/schemas.yaml#/Pagination'
+            examples:
+              top10:
+                summary: Top 10 global players
+                value:
+                  success: true
+                  data:
+                    - rank: 1
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      username: pro_gamer_1
+                      displayName: Elite Champion
+                      countryCode: US
+                      avatarUrl: https://cdn.example.com/avatars/1.png
+                      eloRating: 2450
+                      matchesPlayed: 342
+                      wins: 289
+                      losses: 45
+                      draws: 8
+                      winRate: 0.845
+                    - rank: 2
+                      id: 660e8400-e29b-41d4-a716-446655440001
+                      username: ace_shooter
+                      displayName: Sharpshooter
+                      countryCode: GB
+                      eloRating: 2398
+                      matchesPlayed: 298
+                      wins: 245
+                      losses: 48
+                      draws: 5
+                      winRate: 0.822
+                  pagination:
+                    page: 1
+                    limit: 10
+                    total: 15420
+                    totalPages: 1542
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+
+leaderboard_country:
+  get:
+    tags:
+      - Leaderboard
+    summary: Get country-specific leaderboard
+    description: |
+      Retrieve the leaderboard for a specific country ranked by ELO rating. Results are cached for 3 minutes.
+
+      **Ranking Algorithm:**
+      1. Primary: ELO rating (descending)
+      2. Tiebreaker 1: Total wins (descending)
+      3. Tiebreaker 2: Account age (ascending)
+    operationId: getCountryLeaderboard
+    security:
+      - BearerAuth: []
+      - {}
+    parameters:
+      - name: country
+        in: path
+        required: true
+        description: ISO 3166-1 alpha-2 country code
+        schema:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          example: US
+      - $ref: '../components/parameters.yaml#/Page'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        description: Country leaderboard retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    $ref: '../components/schemas.yaml#/LeaderboardEntry'
+                pagination:
+                  $ref: '../components/schemas.yaml#/Pagination'
+                country:
+                  type: string
+                  description: Country code
+                  example: US
+            examples:
+              usTop10:
+                summary: Top 10 US players
+                value:
+                  success: true
+                  data:
+                    - rank: 1
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      username: usa_pro
+                      displayName: American Eagle
+                      countryCode: US
+                      eloRating: 2450
+                      matchesPlayed: 342
+                      wins: 289
+                      losses: 45
+                      draws: 8
+                      winRate: 0.845
+                  pagination:
+                    page: 1
+                    limit: 10
+                    total: 3542
+                    totalPages: 355
+                  country: US
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+
+leaderboard_top:
+  get:
+    tags:
+      - Leaderboard
+    summary: Get top 10 players
+    description: Quick endpoint to retrieve the top 10 global players without pagination. Optimized for homepage/dashboard displays.
+    operationId: getTopPlayers
+    security:
+      - BearerAuth: []
+      - {}
+    responses:
+      '200':
+        description: Top 10 players retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  maxItems: 10
+                  items:
+                    type: object
+                    properties:
+                      rank:
+                        type: integer
+                        minimum: 1
+                        maximum: 10
+                      id:
+                        type: string
+                        format: uuid
+                      username:
+                        type: string
+                      displayName:
+                        type: string
+                      countryCode:
+                        type: string
+                        nullable: true
+                      avatarUrl:
+                        type: string
+                        format: uri
+                        nullable: true
+                      eloRating:
+                        type: integer
+                      matchesPlayed:
+                        type: integer
+                      wins:
+                        type: integer

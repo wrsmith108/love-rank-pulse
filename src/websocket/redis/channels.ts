@@ -151,6 +151,11 @@ export function createServerId(): string {
  * Validate event payload structure
  */
 export function isValidEventPayload(payload: any): payload is RedisEventPayload {
+  // Explicitly check for null and undefined
+  if (payload === null || payload === undefined) {
+    return false;
+  }
+
   return (
     payload &&
     typeof payload === 'object' &&

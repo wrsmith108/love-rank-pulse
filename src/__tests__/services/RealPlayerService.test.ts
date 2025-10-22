@@ -310,18 +310,24 @@ describe('RealPlayerService', () => {
         elo_rating: 1450
       });
 
-      mockPrisma.player.findUnique.mockResolvedValue(player);
+      mockPrisma.player.findUnique.mockResolvedValue({
+        ...player,
+        leaderboard_entries: [{
+          id: 'entry-1',
+          player_id: 'player-123',
+          leaderboard_type: 'GLOBAL',
+          rank: 10
+        }]
+      });
 
       const result = await playerService.getPlayerStats('player-123');
 
-      expect(result).toMatchObject({
-        matches_played: 100,
-        wins: 60,
-        losses: 35,
-        draws: 5,
-        win_rate: 0.6,
-        elo_rating: 1450
-      });
+      expect(result?.matchesPlayed).toBe(100);
+      expect(result?.wins).toBe(60);
+      expect(result?.losses).toBe(35);
+      expect(result?.draws).toBe(5);
+      expect(result?.winRate).toBeCloseTo(0.6, 2);
+      expect(result?.eloRating).toBe(1450);
     });
 
     it('should calculate win rate correctly', async () => {
@@ -332,11 +338,19 @@ describe('RealPlayerService', () => {
         draws: 0
       });
 
-      mockPrisma.player.findUnique.mockResolvedValue(player);
+      mockPrisma.player.findUnique.mockResolvedValue({
+        ...player,
+        leaderboard_entries: [{
+          id: 'entry-1',
+          player_id: 'player-123',
+          leaderboard_type: 'GLOBAL',
+          rank: 5
+        }]
+      });
 
       const result = await playerService.getPlayerStats('player-123');
 
-      expect(result?.win_rate).toBe(0.6);
+      expect(result?.winRate).toBeCloseTo(0.6, 2);
     });
 
     it('should handle zero matches', async () => {

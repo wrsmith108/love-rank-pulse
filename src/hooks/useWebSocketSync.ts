@@ -49,9 +49,9 @@ export const useWebSocketSync = (enabled: boolean = true) => {
 
     const connectWebSocket = () => {
       try {
-        // TODO: Replace with actual WebSocket URL from environment
-        const wsUrl = process.env.VITE_WS_URL || 'ws://localhost:3001';
-        const ws = new WebSocket(wsUrl);
+        // Use environment variable for WebSocket URL
+        const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
+        const ws = new WebSocket(WS_URL);
 
         ws.onopen = () => {
           console.log('🔌 WebSocket connected');

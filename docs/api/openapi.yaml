@@ -1,0 +1,106 @@
+openapi: 3.0.3
+info:
+  title: Love Rank Pulse API
+  version: 1.0.0
+  description: |
+    Love Rank Pulse is a real-time leaderboard system for a multiplayer shooter game that displays player rankings across three scopes: current match (session), country, and global.
+
+    ## Features
+    - Player authentication and management
+    - Match creation and result submission
+    - Multi-scope leaderboards (global, country, session)
+    - ELO rating system
+    - Real-time WebSocket updates
+
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+
+  contact:
+    name: Love Rank Pulse API Support
+    email: support@loverankpulse.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.loverankpulse.com/api
+    description: Production server
+  - url: https://staging-api.loverankpulse.com/api
+    description: Staging server
+  - url: http://localhost:3001/api
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: User authentication and registration
+  - name: Players
+    description: Player profile and statistics management
+  - name: Matches
+    description: Match creation, updates, and results
+  - name: Leaderboard
+    description: Global, country, and session leaderboards
+  - name: Health
+    description: API health checks and status
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication endpoints
+  /auth/register:
+    $ref: './paths/auth.yaml#/auth_register'
+  /auth/login:
+    $ref: './paths/auth.yaml#/auth_login'
+  /auth/logout:
+    $ref: './paths/auth.yaml#/auth_logout'
+  /auth/me:
+    $ref: './paths/auth.yaml#/auth_me'
+
+  # Player endpoints
+  /players/{id}:
+    $ref: './paths/players.yaml#/players_by_id'
+  /players/{id}/stats:
+    $ref: './paths/players.yaml#/players_stats'
+
+  # Match endpoints
+  /matches:
+    $ref: './paths/matches.yaml#/matches'
+  /matches/{id}:
+    $ref: './paths/matches.yaml#/matches_by_id'
+  /matches/{id}/result:
+    $ref: './paths/matches.yaml#/matches_result'
+
+  # Leaderboard endpoints
+  /leaderboard/global:
+    $ref: './paths/leaderboard.yaml#/leaderboard_global'
+  /leaderboard/country/{country}:
+    $ref: './paths/leaderboard.yaml#/leaderboard_country'
+  /leaderboard/top:
+    $ref: './paths/leaderboard.yaml#/leaderboard_top'
+
+  # Health endpoints
+  /health:
+    $ref: './paths/health.yaml#/health'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login or /auth/register
+
+  schemas:
+    $ref: './components/schemas.yaml'
+
+  responses:
+    $ref: './components/responses.yaml'
+
+  parameters:
+    $ref: './components/parameters.yaml'
+
+  examples:
+    $ref: './components/examples.yaml'

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">9.71% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/175</span>
+                <span class='fraction'>17/175</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">2.08% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/96</span>
+                <span class='fraction'>2/96</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">8.69% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/46</span>
+                <span class='fraction'>4/46</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">9.15% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/142</span>
+                <span class='fraction'>13/142</span>
             </div>
         
             
@@ -357,9 +357,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-yes">19x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -386,9 +386,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">26x</span>
+<span class="cline-any cline-yes">26x</span>
+<span class="cline-any cline-yes">26x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -580,8 +580,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">26x</span>
+<span class="cline-any cline-yes">26x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -621,34 +621,34 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">19x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Mock Redis Client for testing
  * Provides in-memory Redis mock with common operations
  */
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export class M</span></span>ockRedisClient {
-  private <span class="cstat-no" title="statement not covered" >store: Map&lt;string, { value: string; expiry?: number }&gt; = new Map();</span>
-  private <span class="cstat-no" title="statement not covered" >pubsubChannels: Map&lt;string, Set&lt;Function&gt;&gt; = new Map();</span>
+export class MockRedisClient {
+  private store: Map&lt;string, { value: string; expiry?: number }&gt; = new Map();
+  private pubsubChannels: Map&lt;string, Set&lt;Function&gt;&gt; = new Map();
 &nbsp;
   // Basic operations
   async <span class="fstat-no" title="function not covered" >get(</span>key: string): Promise&lt;string | null&gt; {
@@ -674,10 +674,10 @@
 <span class="cstat-no" title="statement not covered" >    return this.set(key, value, { EX: seconds });</span>
   }
 &nbsp;
-  async <span class="fstat-no" title="function not covered" >del(</span>key: string): Promise&lt;number&gt; {
-    const existed = <span class="cstat-no" title="statement not covered" >this.store.has(key);</span>
-<span class="cstat-no" title="statement not covered" >    this.store.delete(key);</span>
-<span class="cstat-no" title="statement not covered" >    return existed ? 1 : 0;</span>
+  async del(key: string): Promise&lt;number&gt; {
+    const existed = this.store.has(key);
+    this.store.delete(key);
+    return existed ? <span class="branch-0 cbranch-no" title="branch not covered" >1 </span>: 0;
   }
 &nbsp;
   async <span class="fstat-no" title="function not covered" >exists(</span>key: string): Promise&lt;number&gt; {
@@ -868,9 +868,9 @@
   }
 &nbsp;
   // Pub/Sub operations
-  async <span class="fstat-no" title="function not covered" >publish(</span>channel: string, message: string): Promise&lt;number&gt; {
-    const subscribers = <span class="cstat-no" title="statement not covered" >this.pubsubChannels.get(channel);</span>
-<span class="cstat-no" title="statement not covered" >    if (!subscribers) <span class="cstat-no" title="statement not covered" >return 0;</span></span>
+  async publish(channel: string, message: string): Promise&lt;number&gt; {
+    const subscribers = this.pubsubChannels.get(channel);
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (!subscribers) return 0;
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    subscribers.forEach(<span class="fstat-no" title="function not covered" >callback </span>=&gt; <span class="cstat-no" title="statement not covered" >callback(message))</span>;</span>
 <span class="cstat-no" title="statement not covered" >    return subscribers.size;</span>
@@ -910,26 +910,26 @@
   }
 }
 &nbsp;
-export const <span class="cstat-no" title="statement not covered" >createMockRedisClient = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>): MockRedisClient =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  return new MockRedisClient();</span>
+export const createMockRedisClient = (): MockRedisClient =&gt; {
+  return new MockRedisClient();
 };
 &nbsp;
 let mockRedis: MockRedisClient;
 &nbsp;
-export const <span class="cstat-no" title="statement not covered" >getMockRedisClient = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>): MockRedisClient =</span>&gt; {</span>
+export const getMockRedisClient = <span class="fstat-no" title="function not covered" >(): MockRedisClient =</span>&gt; {
 <span class="cstat-no" title="statement not covered" >  if (!mockRedis) {</span>
 <span class="cstat-no" title="statement not covered" >    mockRedis = new MockRedisClient();</span>
   }
 <span class="cstat-no" title="statement not covered" >  return mockRedis;</span>
 };
 &nbsp;
-export const <span class="cstat-no" title="statement not covered" >resetMockRedis = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >a</span>sync (): Promise&lt;void&gt; =</span>&gt;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" > {</span></span></span>
+export const resetMockRedis = <span class="fstat-no" title="function not covered" >async (): Promise&lt;void&gt; =</span>&gt;<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" > {</span></span>
 <span class="cstat-no" title="statement not covered" >  if (mockRedis) {</span>
 <span class="cstat-no" title="statement not covered" >    await mockRedis.flushall();</span>
   }
 };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export default getMockRedisClient;</span>
+export default getMockRedisClient;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -937,7 +937,7 @@ export const <span class="cstat-no" title="statement not covered" >resetMockRedi
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-22T01:42:20.464Z
+                at 2025-10-22T21:05:51.175Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

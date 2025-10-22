@@ -1,0 +1,113 @@
+health:
+  get:
+    tags:
+      - Health
+    summary: Health check endpoint
+    description: Check the health status of the API and its dependencies (database, cache, etc.)
+    operationId: healthCheck
+    security: []
+    responses:
+      '200':
+        description: API is healthy
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, degraded, unhealthy]
+                  example: healthy
+                timestamp:
+                  type: string
+                  format: date-time
+                  example: 2024-01-20T12:00:00Z
+                version:
+                  type: string
+                  example: 1.0.0
+                services:
+                  type: object
+                  properties:
+                    database:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                          enum: [up, down]
+                          example: up
+                        responseTime:
+                          type: number
+                          description: Response time in milliseconds
+                          example: 12
+                    cache:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                          enum: [up, down]
+                          example: up
+                        responseTime:
+                          type: number
+                          description: Response time in milliseconds
+                          example: 5
+                    websocket:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                          enum: [up, down]
+                          example: up
+                        connections:
+                          type: integer
+                          description: Number of active WebSocket connections
+                          example: 342
+            examples:
+              healthy:
+                summary: All services healthy
+                value:
+                  status: healthy
+                  timestamp: 2024-01-20T12:00:00Z
+                  version: 1.0.0
+                  services:
+                    database:
+                      status: up
+                      responseTime: 12
+                    cache:
+                      status: up
+                      responseTime: 5
+                    websocket:
+                      status: up
+                      connections: 342
+              degraded:
+                summary: Degraded performance
+                value:
+                  status: degraded
+                  timestamp: 2024-01-20T12:00:00Z
+                  version: 1.0.0
+                  services:
+                    database:
+                      status: up
+                      responseTime: 245
+                    cache:
+                      status: down
+                      error: Connection timeout
+                    websocket:
+                      status: up
+                      connections: 89
+      '503':
+        description: API is unhealthy
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [unhealthy]
+                  example: unhealthy
+                timestamp:
+                  type: string
+                  format: date-time
+                error:
+                  type: string
+                  example: Database connection failed

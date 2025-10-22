@@ -138,8 +138,13 @@ describe('Redis Channels', () => {
     });
 
     it('should reject null or undefined', () => {
-      expect(isValidEventPayload(null as any)).toBe(false);
-      expect(isValidEventPayload(undefined as any)).toBe(false);
+      // null check
+      const nullResult = isValidEventPayload(null as any);
+      expect(nullResult).toBe(false);
+
+      // undefined check
+      const undefinedResult = isValidEventPayload(undefined as any);
+      expect(undefinedResult).toBe(false);
     });
   });
 

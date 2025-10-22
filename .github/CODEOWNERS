@@ -1,0 +1,42 @@
+# Code Owners for Love Rank Pulse
+# These owners will be automatically requested for review when someone opens a pull request.
+
+# Default owners for everything in the repo
+* @your-username
+
+# Workflow files require review from DevOps/Infrastructure team
+/.github/workflows/ @your-username
+/.github/CODEOWNERS @your-username
+
+# CI/CD scripts and configuration
+/scripts/ @your-username
+/vercel.json @your-username
+/vercel-build.js @your-username
+
+# Database schema and migrations
+/prisma/ @your-username
+
+# Backend services
+/src/services/ @your-username
+/src/api-gateway/ @your-username
+/src/websocket/ @your-username
+/src/routes/ @your-username
+/src/middleware/ @your-username
+
+# Frontend components and pages
+/src/components/ @your-username
+/src/pages/ @your-username
+/src/hooks/ @your-username
+
+# Configuration files
+/*.config.* @your-username
+/tsconfig.json @your-username
+/package.json @your-username
+
+# Documentation
+/docs/ @your-username
+/*.md @your-username
+
+# Tests require review to maintain quality
+/src/__tests__/ @your-username
+/cypress/ @your-username

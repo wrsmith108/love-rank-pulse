@@ -22,6 +22,8 @@ model Player {
   // ELO Rating System
   elo_rating Int @default(1200) // Standard starting ELO
   rank       Int @default(0) // Overall leaderboard rank
+  peakElo    Int @default(1200) // Highest ELO rating achieved
+  lowestElo  Int @default(1200) // Lowest ELO rating achieved
 
   // Match Statistics
   matches_played Int @default(0)

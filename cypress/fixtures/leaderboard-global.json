@@ -1,0 +1,44 @@
+{
+  "success": true,
+  "data": [
+    {
+      "player_id": "player-global-1",
+      "player_name": "WorldElite",
+      "country_code": "KR",
+      "kills": 150,
+      "deaths": 20,
+      "kd_ratio": 7.5,
+      "is_win": true,
+      "rank": 1,
+      "headshots": 85,
+      "accuracy": 78.5,
+      "score": 15200
+    },
+    {
+      "player_id": "player-global-2",
+      "player_name": "GlobalLegend",
+      "country_code": "SE",
+      "kills": 142,
+      "deaths": 25,
+      "kd_ratio": 5.68,
+      "is_win": true,
+      "rank": 2,
+      "headshots": 78,
+      "accuracy": 75.3,
+      "score": 14520
+    },
+    {
+      "player_id": "player-global-3",
+      "player_name": "InternationalPro",
+      "country_code": "BR",
+      "kills": 135,
+      "deaths": 28,
+      "kd_ratio": 4.82,
+      "is_win": true,
+      "rank": 3,
+      "headshots": 72,
+      "accuracy": 73.1,
+      "score": 13890
+    }
+  ]
+}

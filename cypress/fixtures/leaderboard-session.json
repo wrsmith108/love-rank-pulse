@@ -1,0 +1,70 @@
+{
+  "success": true,
+  "data": [
+    {
+      "player_id": "player-1",
+      "player_name": "ProGamer123",
+      "country_code": "US",
+      "kills": 45,
+      "deaths": 12,
+      "kd_ratio": 3.75,
+      "is_win": true,
+      "rank": 1,
+      "headshots": 23,
+      "accuracy": 67.5,
+      "score": 4520
+    },
+    {
+      "player_id": "player-2",
+      "player_name": "SnipeQueen",
+      "country_code": "GB",
+      "kills": 38,
+      "deaths": 15,
+      "kd_ratio": 2.53,
+      "is_win": true,
+      "rank": 2,
+      "headshots": 18,
+      "accuracy": 62.3,
+      "score": 3890
+    },
+    {
+      "player_id": "player-3",
+      "player_name": "TacticalNinja",
+      "country_code": "JP",
+      "kills": 35,
+      "deaths": 18,
+      "kd_ratio": 1.94,
+      "is_win": false,
+      "rank": 3,
+      "headshots": 15,
+      "accuracy": 58.7,
+      "score": 3450
+    },
+    {
+      "player_id": "player-4",
+      "player_name": "RushMaster",
+      "country_code": "DE",
+      "kills": 32,
+      "deaths": 20,
+      "kd_ratio": 1.6,
+      "is_win": true,
+      "rank": 4,
+      "headshots": 12,
+      "accuracy": 54.2,
+      "score": 3120
+    },
+    {
+      "player_id": "player-5",
+      "player_name": "StealtHawk",
+      "country_code": "CA",
+      "kills": 28,
+      "deaths": 22,
+      "kd_ratio": 1.27,
+      "is_win": false,
+      "rank": 5,
+      "headshots": 10,
+      "accuracy": 51.8,
+      "score": 2890
+    }
+  ]
+}

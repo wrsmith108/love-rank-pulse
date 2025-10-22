@@ -6,10 +6,7 @@ import { MyStatsModal, PlayerStats } from "@/components/MyStatsModal";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import { useRealtimeLeaderboard } from "@/hooks/useRealtimeLeaderboard";
-import { useLiveMatchEvents } from "@/hooks/useLiveMatchEvents";
-import { RankChangeEvent, LeaderboardUpdateEvent, SubscriptionScope } from "@/contexts/WebSocketContext";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
 // Enhanced mock data for demonstration
 const mockPlayers: Player[] = [
@@ -219,7 +216,7 @@ const Index = () => {
   };
 
   // Get subscription scope based on active tab
-  const getSubscriptionScope = React.useCallback((): SubscriptionScope => {
+  const getSubscriptionScope = React.useCallback((): string => {
     switch (activeTab) {
       case "session":
         return `session:${currentSessionId}`;
@@ -230,35 +227,6 @@ const Index = () => {
         return "global";
     }
   }, [activeTab, currentSessionId, countryCode]);
-
-  // Handle real-time rank changes
-  const handleRankChange = React.useCallback((event: RankChangeEvent) => {
-    console.log("Rank change received:", event);
-    setError(null); // Clear any errors when receiving updates
-    setPlayers(prevPlayers => {
-      const updatedPlayers = prevPlayers.map(player => {
-        if (player.player_id === event.player_id) {
-          return {
-            ...player,
-            rank: event.new_rank,
-            player_name: event.player_name
-          };
-        }
-        return player;
-      });
-      // Re-sort by rank
-      return updatedPlayers.sort((a, b) => a.rank - b.rank);
-    });
-  }, []);
-
-  // Handle full leaderboard updates
-  const handleLeaderboardUpdate = React.useCallback((event: LeaderboardUpdateEvent) => {
-    console.log("Leaderboard update received:", event);
-    setError(null); // Clear any errors when receiving updates
-    if (event.players && event.players.length > 0) {
-      setPlayers(event.players);
-    }
-  }, []);
 
   // Handle retry
   const handleRetry = () => {
@@ -278,22 +246,8 @@ const Index = () => {
     setError(null);
   };
 
-  // Subscribe to real-time leaderboard updates
-  const { lastUpdate, updateCount } = useRealtimeLeaderboard({
-    scope: getSubscriptionScope(),
-    autoSubscribe: true,
-    onRankChange: handleRankChange,
-    onLeaderboardUpdate: handleLeaderboardUpdate
-  });
-
-  // Subscribe to live match events (only for session tab)
-  const { matchStarted, matchEnded, eventCount } = useLiveMatchEvents({
-    matchId: activeTab === "session" ? currentSessionId : undefined,
-    autoSubscribe: activeTab === "session",
-    onMatchEvent: (event) => {
-      console.log("Match event received:", event);
-    }
-  });
+  // WebSocket is connected via useWebSocket hook above
+  // Real-time updates are handled by useWebSocketSync in the background
 
   return (
     <ErrorBoundary onReset={handleRetry}>
@@ -397,9 +351,9 @@ const Index = () => {
         {/* Footer */}
         <footer className="mt-12 py-6 border-t border-border">
           <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-            {isConnected && lastUpdate ? (
+            {isConnected ? (
               <>
-                Live updates • Scope: {getSubscriptionScope()} • Last update: {lastUpdate.toLocaleTimeString()}
+                Live updates • Scope: {getSubscriptionScope()} • Connected
               </>
             ) : (
               <>

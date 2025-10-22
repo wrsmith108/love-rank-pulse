@@ -1,0 +1,267 @@
+name: CD Pipeline - Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+
+env:
+  NODE_VERSION: '18'
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  pre-deploy:
+    name: Pre-Deployment Checks
+    runs-on: ubuntu-latest
+    outputs:
+      should-deploy: ${{ steps.check.outputs.should-deploy }}
+      environment: ${{ steps.env.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          else
+            echo "environment=preview" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if deployment needed
+        id: check
+        run: |
+          # Check if there are changes that require deployment
+          if git diff --name-only HEAD~1 | grep -E '(src/|public/|package.json|vite.config.ts)'; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: pre-deploy
+    if: needs.pre-deploy.outputs.should-deploy == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Run tests
+        run: npm run test:coverage
+        env:
+          NODE_ENV: test
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+          VITE_ENABLE_REALTIME: 'true'
+          VITE_ENABLE_WEBSOCKETS: 'true'
+
+      - name: Verify build
+        run: node scripts/verify-build.js
+        env:
+          BUILD_MODE: production
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+          retention-days: 30
+
+  deploy-vercel:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: [pre-deploy, build]
+    if: needs.pre-deploy.outputs.should-deploy == 'true'
+    environment:
+      name: ${{ needs.pre-deploy.outputs.environment }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: |
+          if [ "${{ needs.pre-deploy.outputs.environment }}" = "production" ]; then
+            vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          fi
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} ${{ needs.pre-deploy.outputs.environment == 'production' && '--prod' || '' }}
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          if [ "${{ needs.pre-deploy.outputs.environment }}" = "production" ]; then
+            URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          else
+            URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          fi
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $URL"
+
+      - name: Comment PR with deployment URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Deployment successful!\n\n**Preview URL:** ${{ steps.deploy.outputs.url }}\n\nEnvironment: ${{ needs.pre-deploy.outputs.environment }}`
+            })
+
+  post-deploy:
+    name: Post-Deployment Verification
+    runs-on: ubuntu-latest
+    needs: [pre-deploy, deploy-vercel]
+    if: needs.pre-deploy.outputs.should-deploy == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Wait for deployment to be ready
+        run: |
+          echo "Waiting 30 seconds for deployment to stabilize..."
+          sleep 30
+
+      - name: Health check
+        run: |
+          DEPLOY_URL="${{ needs.deploy-vercel.outputs.url }}"
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_URL" || echo "000")
+
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "✅ Health check passed! (Status: $HTTP_STATUS)"
+              exit 0
+            else
+              echo "⚠️ Health check failed (Status: $HTTP_STATUS). Retrying..."
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              sleep 10
+            fi
+          done
+
+          echo "❌ Health check failed after $MAX_RETRIES attempts"
+          exit 1
+
+      - name: Run smoke tests
+        run: |
+          DEPLOY_URL="${{ needs.deploy-vercel.outputs.url }}"
+
+          # Check if main assets are accessible
+          curl -f "$DEPLOY_URL" || exit 1
+
+          echo "✅ Smoke tests passed!"
+
+  notify:
+    name: Send Deployment Notifications
+    runs-on: ubuntu-latest
+    needs: [pre-deploy, deploy-vercel, post-deploy]
+    if: always() && needs.pre-deploy.outputs.should-deploy == 'true'
+    steps:
+      - name: Deployment status summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${{ needs.pre-deploy.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Status:** ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy Status:** ${{ needs.deploy-vercel.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Verification Status:** ${{ needs.post-deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment URL:** ${{ needs.deploy-vercel.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.post-deploy.result }}" = "success" ]; then
+            echo "✅ **Deployment completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Deployment failed or verification incomplete**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Deployment failed for ${{ needs.pre-deploy.outputs.environment }} environment"
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: [pre-deploy, post-deploy]
+    if: failure() && needs.pre-deploy.outputs.environment == 'production'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Trigger rollback
+        run: |
+          echo "🔄 Production deployment failed - rollback may be required"
+          echo "Please review the deployment and manually rollback if needed using:"
+          echo "vercel rollback --token=\${{ secrets.VERCEL_TOKEN }}"
+
+      - name: Create rollback issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Production Deployment Failed - Rollback Required',
+              body: `Production deployment failed for commit ${context.sha}.\n\nPlease review the [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) and consider rolling back.\n\n**Command:** \`vercel rollback\``,
+              labels: ['deployment', 'urgent', 'production']
+            })

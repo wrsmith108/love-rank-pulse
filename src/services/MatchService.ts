@@ -1,6 +1,7 @@
 import { PrismaClient, Match, MatchResult, MatchStatus, MatchType, ResultType, VerificationStatus } from '@prisma/client';
 import { ELOCalculator } from '../lib/elo';
 import RedisClient, { CacheKeys, CacheTTL } from '../lib/redis';
+import { createClient } from 'redis';
 
 /**
  * ELO Rating Configuration
@@ -491,7 +492,7 @@ export class MatchService {
   }
 
   /**
-   * Get player match statistics
+   * Get player match statistics with comprehensive calculations
    * @param playerId Player ID
    * @returns Player match statistics
    */
@@ -500,10 +501,22 @@ export class MatchService {
       where: { id: playerId },
       include: {
         matches_as_player1: {
-          include: { result: true }
+          include: {
+            result: true,
+            player2: {
+              select: { elo_rating: true }
+            }
+          },
+          orderBy: { completed_at: 'desc' }
         },
         matches_as_player2: {
-          include: { result: true }
+          include: {
+            result: true,
+            player1: {
+              select: { elo_rating: true }
+            }
+          },
+          orderBy: { completed_at: 'desc' }
         }
       }
     });
@@ -512,9 +525,11 @@ export class MatchService {
       throw new Error('Player not found');
     }
 
-    // Calculate statistics
+    // Combine and sort all matches
     const allMatches = [...player.matches_as_player1, ...player.matches_as_player2];
-    const completedMatches = allMatches.filter(m => m.status === MatchStatus.COMPLETED && m.result);
+    const completedMatches = allMatches
+      .filter(m => m.status === MatchStatus.COMPLETED && m.result)
+      .sort((a, b) => (b.completed_at?.getTime() || 0) - (a.completed_at?.getTime() || 0));
 
     const totalMatches = completedMatches.length;
     const wins = player.wins;
@@ -522,35 +537,59 @@ export class MatchService {
     const draws = player.draws;
     const winRate = totalMatches > 0 ? wins / totalMatches : 0;
 
-    // Calculate current streak
+    // Calculate current streak (consecutive wins/losses)
     let currentStreak = 0;
-    const sortedMatches = completedMatches.sort((a, b) =>
-      (b.completed_at?.getTime() || 0) - (a.completed_at?.getTime() || 0)
-    );
+    let longestWinStreak = 0;
+    let longestLossStreak = 0;
+    let tempWinStreak = 0;
+    let tempLossStreak = 0;
 
-    for (const match of sortedMatches) {
+    for (const match of completedMatches) {
       if (!match.result) continue;
 
-      if (match.result.winner_id === playerId) {
-        currentStreak = currentStreak >= 0 ? currentStreak + 1 : 1;
-      } else if (match.result.loser_id === playerId) {
-        currentStreak = currentStreak <= 0 ? currentStreak - 1 : -1;
+      const isWin = match.result.winner_id === playerId;
+      const isLoss = match.result.loser_id === playerId;
+      const isDraw = !isWin && !isLoss;
+
+      // Calculate current streak (most recent matches)
+      if (currentStreak === 0 || (currentStreak > 0 && isWin) || (currentStreak < 0 && isLoss)) {
+        if (isWin) {
+          currentStreak = currentStreak >= 0 ? currentStreak + 1 : 1;
+        } else if (isLoss) {
+          currentStreak = currentStreak <= 0 ? currentStreak - 1 : -1;
+        } else if (isDraw) {
+          currentStreak = 0;
+        }
+      }
+
+      // Track longest streaks
+      if (isWin) {
+        tempWinStreak++;
+        tempLossStreak = 0;
+        longestWinStreak = Math.max(longestWinStreak, tempWinStreak);
+      } else if (isLoss) {
+        tempLossStreak++;
+        tempWinStreak = 0;
+        longestLossStreak = Math.max(longestLossStreak, tempLossStreak);
       } else {
-        break; // Draw breaks the streak
+        tempWinStreak = 0;
+        tempLossStreak = 0;
       }
     }
 
     // Calculate average opponent ELO
     const opponentRatings = completedMatches.map(match => {
       if (match.player1_id === playerId) {
-        return match.player2?.elo_rating || 0;
+        // Type assertion to help TypeScript understand the included relation
+        return (match as any).player2?.elo_rating || 0;
       } else {
-        return match.player1?.elo_rating || 0;
+        // Type assertion to help TypeScript understand the included relation
+        return (match as any).player1?.elo_rating || 0;
       }
     });
 
     const averageOpponentElo = opponentRatings.length > 0
-      ? opponentRatings.reduce((sum, rating) => sum + rating, 0) / opponentRatings.length
+      ? Math.round(opponentRatings.reduce((sum, rating) => sum + rating, 0) / opponentRatings.length)
       : 0;
 
     // Get peak ELO from leaderboard entries
@@ -558,6 +597,11 @@ export class MatchService {
       where: { player_id: playerId },
       orderBy: { peak_elo: 'desc' }
     });
+
+    // Calculate form (last 10 matches)
+    const recentMatches = completedMatches.slice(0, 10);
+    const recentWins = recentMatches.filter(m => m.result?.winner_id === playerId).length;
+    const recentForm = recentMatches.length > 0 ? (recentWins / recentMatches.length) * 100 : 0;
 
     return {
       totalMatches,
@@ -568,8 +612,13 @@ export class MatchService {
       currentStreak,
       currentElo: player.elo_rating,
       peakElo: leaderboardEntry?.peak_elo || player.elo_rating,
-      averageOpponentElo: Math.round(averageOpponentElo)
-    };
+      averageOpponentElo,
+      // Extended statistics
+      longestWinStreak,
+      longestLossStreak,
+      recentForm: Math.round(recentForm),
+      lastMatchDate: completedMatches[0]?.completed_at || null
+    } as any;
   }
 
   /**

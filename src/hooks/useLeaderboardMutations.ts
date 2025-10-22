@@ -1,6 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/config/queryKeys';
 import type { Player } from '@/components/LeaderboardTable';
+import { apiClient, handleApiError } from '@/utils/apiClient';
+import type {
+  AddFriendResponse,
+  ReportPlayerResponse,
+  VoteKickResponse,
+  LoadMorePlayersResponse,
+  RefreshLeaderboardResponse,
+} from '@/types/mutations';
 
 /**
  * Hook for leaderboard mutations (actions that modify data)
@@ -9,6 +17,8 @@ import type { Player } from '@/components/LeaderboardTable';
  * - Optimistic updates for instant UI feedback
  * - Automatic rollback on errors
  * - Query invalidation on success
+ * - Real API integration with axios
+ * - Type-safe responses with proper error handling
  */
 
 interface AddFriendParams {
@@ -32,19 +42,17 @@ interface VoteKickParams {
 export const useAddFriend = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<AddFriendResponse, Error, AddFriendParams>({
     mutationFn: async (params: AddFriendParams) => {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/friends', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(params),
-      // });
-      // if (!response.ok) throw new Error('Failed to add friend');
-      // return response.json();
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return { success: true };
+      try {
+        const response = await apiClient.post<AddFriendResponse>('/friends', {
+          playerId: params.playerId,
+        });
+        return response.data;
+      } catch (error) {
+        const apiError = handleApiError(error);
+        throw new Error(apiError.message || 'Failed to add friend');
+      }
     },
     onMutate: async (params) => {
       // Cancel outgoing refetches
@@ -80,10 +88,12 @@ export const useAddFriend = () => {
           queryClient.setQueryData(queryKey, data);
         });
       }
+      console.error('Failed to add friend:', err.message);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.leaderboard.all });
+      console.log('Friend added successfully:', data.message);
     },
   });
 };
@@ -94,15 +104,25 @@ export const useAddFriend = () => {
 export const useReportPlayer = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<ReportPlayerResponse, Error, ReportPlayerParams>({
     mutationFn: async (params: ReportPlayerParams) => {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return { success: true, reportId: `report-${Date.now()}` };
+      try {
+        const response = await apiClient.post<ReportPlayerResponse>('/friends/report', {
+          playerId: params.playerId,
+          reason: params.reason,
+        });
+        return response.data;
+      } catch (error) {
+        const apiError = handleApiError(error);
+        throw new Error(apiError.message || 'Failed to report player');
+      }
     },
     onSuccess: (data, variables) => {
       // Show success notification
-      console.log('Player reported successfully:', variables.playerId);
+      console.log('Player reported successfully:', data.message);
+    },
+    onError: (err) => {
+      console.error('Failed to report player:', err.message);
     },
   });
 };
@@ -113,11 +133,18 @@ export const useReportPlayer = () => {
 export const useVoteKick = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<VoteKickResponse, Error, VoteKickParams>({
     mutationFn: async (params: VoteKickParams) => {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return { success: true, votesNeeded: 3, currentVotes: 1 };
+      try {
+        const response = await apiClient.post<VoteKickResponse>('/friends/vote-kick', {
+          playerId: params.playerId,
+          matchId: params.matchId,
+        });
+        return response.data;
+      } catch (error) {
+        const apiError = handleApiError(error);
+        throw new Error(apiError.message || 'Failed to vote kick player');
+      }
     },
     onMutate: async (params) => {
       // Optimistically mark player as having active kick vote
@@ -136,8 +163,12 @@ export const useVoteKick = () => {
         }
       );
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.leaderboard.all });
+      console.log('Vote kick successful:', data.message);
+    },
+    onError: (err) => {
+      console.error('Failed to vote kick player:', err.message);
     },
   });
 };
@@ -148,14 +179,25 @@ export const useVoteKick = () => {
 export const useRefreshLeaderboard = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<RefreshLeaderboardResponse, Error, void>({
     mutationFn: async () => {
-      // Force refetch all leaderboard queries
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.leaderboard.all,
-        refetchType: 'active',
-      });
-      return { success: true };
+      try {
+        // Force refetch all leaderboard queries
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.leaderboard.all,
+          refetchType: 'active',
+        });
+        return { success: true };
+      } catch (error) {
+        const apiError = handleApiError(error);
+        throw new Error(apiError.message || 'Failed to refresh leaderboard');
+      }
+    },
+    onSuccess: () => {
+      console.log('Leaderboard refreshed successfully');
+    },
+    onError: (err) => {
+      console.error('Failed to refresh leaderboard:', err.message);
     },
   });
 };
@@ -164,11 +206,37 @@ export const useRefreshLeaderboard = () => {
  * Load more leaderboard entries
  */
 export const useLoadMorePlayers = () => {
-  return useMutation({
-    mutationFn: async (params: { offset: number; limit: number }) => {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return { players: [], hasMore: false };
+  return useMutation<
+    LoadMorePlayersResponse,
+    Error,
+    { offset: number; limit: number; type?: string; country?: string }
+  >({
+    mutationFn: async (params: { offset: number; limit: number; type?: string; country?: string }) => {
+      try {
+        const endpoint = params.country
+          ? `/leaderboard/country/${params.country}`
+          : '/leaderboard/global';
+
+        const page = Math.floor(params.offset / params.limit) + 1;
+
+        const response = await apiClient.get(endpoint, {
+          params: {
+            page,
+            limit: params.limit,
+          },
+        });
+
+        return {
+          players: response.data.data || [],
+          hasMore: response.data.pagination.page < response.data.pagination.totalPages,
+        };
+      } catch (error) {
+        const apiError = handleApiError(error);
+        throw new Error(apiError.message || 'Failed to load more players');
+      }
+    },
+    onError: (err) => {
+      console.error('Failed to load more players:', err.message);
     },
   });
 };

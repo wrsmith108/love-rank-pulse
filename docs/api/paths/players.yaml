@@ -1,0 +1,155 @@
+players_by_id:
+  get:
+    tags:
+      - Players
+    summary: Get player profile by ID
+    description: Retrieve public profile information for a specific player. Authentication is optional.
+    operationId: getPlayerById
+    security:
+      - BearerAuth: []
+      - {}
+    parameters:
+      - $ref: '../components/parameters.yaml#/PlayerId'
+    responses:
+      '200':
+        description: Player profile retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../components/schemas.yaml#/PlayerPublicProfile'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+  put:
+    tags:
+      - Players
+    summary: Update player profile
+    description: Update the authenticated player's own profile. Players can only update their own profile.
+    operationId: updatePlayerProfile
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/PlayerId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              displayName:
+                type: string
+                minLength: 1
+                maxLength: 100
+                description: Updated display name
+                example: Elite Sniper
+              countryCode:
+                type: string
+                pattern: '^[A-Z]{2}$'
+                description: Updated country code
+                example: GB
+              avatarUrl:
+                type: string
+                format: uri
+                nullable: true
+                description: URL to avatar image
+                example: https://cdn.example.com/avatars/player123.png
+              settings:
+                type: object
+                description: Player preferences (reserved for future use)
+          examples:
+            updateProfile:
+              summary: Update profile example
+              value:
+                displayName: Elite Sniper
+                countryCode: GB
+                avatarUrl: https://cdn.example.com/avatars/player123.png
+    responses:
+      '200':
+        description: Profile updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Profile updated successfully
+                data:
+                  $ref: '../components/schemas.yaml#/PlayerProfile'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+  delete:
+    tags:
+      - Players
+    summary: Deactivate player account
+    description: Soft delete - deactivate the player's account. Players can only delete their own account.
+    operationId: deletePlayerAccount
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/PlayerId'
+    responses:
+      '200':
+        description: Account deactivated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Account deactivated successfully
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+players_stats:
+  get:
+    tags:
+      - Players
+    summary: Get detailed player statistics
+    description: Retrieve comprehensive statistics for a player including match history, streaks, and performance metrics.
+    operationId: getPlayerStats
+    security:
+      - BearerAuth: []
+      - {}
+    parameters:
+      - $ref: '../components/parameters.yaml#/PlayerId'
+    responses:
+      '200':
+        description: Player statistics retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../components/schemas.yaml#/PlayerStatistics'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'

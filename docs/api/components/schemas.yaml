@@ -1,0 +1,392 @@
+PlayerProfile:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique player identifier
+      example: 550e8400-e29b-41d4-a716-446655440000
+    username:
+      type: string
+      description: Unique username
+      example: player123
+    email:
+      type: string
+      format: email
+      description: Player's email address
+      example: player@example.com
+    displayName:
+      type: string
+      description: Display name shown to other players
+      example: Pro Gamer
+    countryCode:
+      type: string
+      nullable: true
+      description: ISO 3166-1 alpha-2 country code
+      example: US
+    avatarUrl:
+      type: string
+      format: uri
+      nullable: true
+      description: URL to player's avatar image
+      example: https://cdn.example.com/avatars/player123.png
+    eloRating:
+      type: integer
+      description: Current ELO rating
+      example: 1450
+    matchesPlayed:
+      type: integer
+      description: Total matches played
+      example: 128
+    wins:
+      type: integer
+      description: Total wins
+      example: 76
+    losses:
+      type: integer
+      description: Total losses
+      example: 48
+    draws:
+      type: integer
+      description: Total draws
+      example: 4
+    createdAt:
+      type: string
+      format: date-time
+      description: Account creation timestamp
+      example: 2024-01-15T10:30:00Z
+    lastActiveAt:
+      type: string
+      format: date-time
+      nullable: true
+      description: Last activity timestamp
+      example: 2024-01-20T15:45:00Z
+    isActive:
+      type: boolean
+      description: Whether the account is active
+      example: true
+
+PlayerPublicProfile:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    username:
+      type: string
+      example: player123
+    displayName:
+      type: string
+      example: Pro Gamer
+    countryCode:
+      type: string
+      nullable: true
+      example: US
+    avatarUrl:
+      type: string
+      format: uri
+      nullable: true
+      example: https://cdn.example.com/avatars/player123.png
+    eloRating:
+      type: integer
+      example: 1450
+    matchesPlayed:
+      type: integer
+      example: 128
+    wins:
+      type: integer
+      example: 76
+    losses:
+      type: integer
+      example: 48
+    draws:
+      type: integer
+      example: 4
+    winRate:
+      type: number
+      format: float
+      minimum: 0
+      maximum: 1
+      description: Win rate as decimal (0.0 - 1.0)
+      example: 0.594
+    createdAt:
+      type: string
+      format: date-time
+      example: 2024-01-15T10:30:00Z
+    lastActiveAt:
+      type: string
+      format: date-time
+      nullable: true
+      example: 2024-01-20T15:45:00Z
+
+PlayerStatistics:
+  type: object
+  properties:
+    playerId:
+      type: string
+      format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    username:
+      type: string
+      example: player123
+    displayName:
+      type: string
+      example: Pro Gamer
+    eloRating:
+      type: integer
+      example: 1450
+    matchesPlayed:
+      type: integer
+      example: 128
+    wins:
+      type: integer
+      example: 76
+    losses:
+      type: integer
+      example: 48
+    draws:
+      type: integer
+      example: 4
+    winRate:
+      type: number
+      format: float
+      example: 0.594
+    currentStreak:
+      type: integer
+      description: Current win/loss streak (positive = wins, negative = losses)
+      example: 5
+    recentMatches:
+      type: array
+      maxItems: 10
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          opponent:
+            type: string
+            format: uuid
+            description: Opponent player ID
+          result:
+            type: string
+            enum: [WIN, LOSS, DRAW]
+          eloChange:
+            type: integer
+            description: ELO rating change from this match
+            example: 24
+          completedAt:
+            type: string
+            format: date-time
+            nullable: true
+
+MatchWithPlayers:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      example: 770e8400-e29b-41d4-a716-446655440000
+    player1:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        eloRating:
+          type: integer
+    player2:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        eloRating:
+          type: integer
+    status:
+      type: string
+      enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED]
+      example: COMPLETED
+    matchType:
+      type: string
+      enum: [RANKED, CASUAL, TOURNAMENT, CUSTOM]
+      example: RANKED
+    result:
+      $ref: '#/MatchResult'
+    scheduledAt:
+      type: string
+      format: date-time
+      nullable: true
+    startedAt:
+      type: string
+      format: date-time
+      nullable: true
+    completedAt:
+      type: string
+      format: date-time
+      nullable: true
+    createdAt:
+      type: string
+      format: date-time
+
+MatchResult:
+  type: object
+  nullable: true
+  properties:
+    matchId:
+      type: string
+      format: uuid
+      example: 770e8400-e29b-41d4-a716-446655440000
+    winnerId:
+      type: string
+      format: uuid
+      nullable: true
+      description: Winner player ID (null for draws)
+      example: 550e8400-e29b-41d4-a716-446655440000
+    loserId:
+      type: string
+      format: uuid
+      nullable: true
+      description: Loser player ID (null for draws)
+      example: 660e8400-e29b-41d4-a716-446655440001
+    player1Score:
+      type: integer
+      minimum: 0
+      example: 25
+    player2Score:
+      type: integer
+      minimum: 0
+      example: 18
+    ratingChange:
+      type: integer
+      description: ELO rating change magnitude
+      example: 24
+    winnerNewElo:
+      type: integer
+      nullable: true
+      description: Winner's new ELO rating
+      example: 1474
+    loserNewElo:
+      type: integer
+      nullable: true
+      description: Loser's new ELO rating
+      example: 1426
+    resultType:
+      type: string
+      enum: [WIN, LOSS, DRAW, FORFEIT, NO_CONTEST]
+      example: WIN
+    verificationStatus:
+      type: string
+      enum: [PENDING, VERIFIED, DISPUTED]
+      example: VERIFIED
+
+LeaderboardEntry:
+  type: object
+  properties:
+    rank:
+      type: integer
+      minimum: 1
+      description: Current rank position
+      example: 1
+    id:
+      type: string
+      format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    username:
+      type: string
+      example: pro_gamer_1
+    displayName:
+      type: string
+      example: Elite Champion
+    countryCode:
+      type: string
+      nullable: true
+      example: US
+    avatarUrl:
+      type: string
+      format: uri
+      nullable: true
+      example: https://cdn.example.com/avatars/1.png
+    eloRating:
+      type: integer
+      example: 2450
+    matchesPlayed:
+      type: integer
+      example: 342
+    wins:
+      type: integer
+      example: 289
+    losses:
+      type: integer
+      example: 45
+    draws:
+      type: integer
+      example: 8
+    winRate:
+      type: number
+      format: float
+      minimum: 0
+      maximum: 1
+      description: Win rate as decimal
+      example: 0.845
+
+Pagination:
+  type: object
+  properties:
+    page:
+      type: integer
+      minimum: 1
+      description: Current page number
+      example: 1
+    limit:
+      type: integer
+      minimum: 1
+      maximum: 100
+      description: Items per page
+      example: 20
+    total:
+      type: integer
+      minimum: 0
+      description: Total number of items
+      example: 15420
+    totalPages:
+      type: integer
+      minimum: 0
+      description: Total number of pages
+      example: 771
+
+Error:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: false
+    error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          description: Human-readable error message
+          example: Invalid input parameters
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field that caused the error
+                example: email
+              message:
+                type: string
+                description: Field-specific error message
+                example: Email format is invalid

@@ -1,0 +1,300 @@
+matches:
+  get:
+    tags:
+      - Matches
+    summary: Get all matches with pagination
+    description: Retrieve a paginated list of completed matches. Supports filtering and sorting.
+    operationId: getAllMatches
+    security:
+      - BearerAuth: []
+      - {}
+    parameters:
+      - $ref: '../components/parameters.yaml#/Page'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        description: Matches retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    $ref: '../components/schemas.yaml#/MatchWithPlayers'
+                pagination:
+                  $ref: '../components/schemas.yaml#/Pagination'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+
+  post:
+    tags:
+      - Matches
+    summary: Create a new match
+    description: Create a new match between two players. The authenticated user must be one of the players.
+    operationId: createMatch
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - player1Id
+              - player2Id
+            properties:
+              player1Id:
+                type: string
+                format: uuid
+                description: First player's ID
+                example: 550e8400-e29b-41d4-a716-446655440000
+              player2Id:
+                type: string
+                format: uuid
+                description: Second player's ID
+                example: 660e8400-e29b-41d4-a716-446655440001
+              matchType:
+                type: string
+                enum: [RANKED, CASUAL, TOURNAMENT, CUSTOM]
+                default: RANKED
+                description: Type of match
+              scheduledAt:
+                type: string
+                format: date-time
+                description: Scheduled start time (optional)
+              bestOf:
+                type: integer
+                minimum: 1
+                maximum: 9
+                default: 1
+                description: Best of N games
+              timeLimit:
+                type: integer
+                minimum: 60
+                description: Time limit in seconds (optional)
+              tournamentId:
+                type: string
+                format: uuid
+                description: Tournament ID if applicable
+              roundNumber:
+                type: integer
+                minimum: 1
+                description: Round number in tournament
+              notes:
+                type: string
+                maxLength: 1000
+                description: Additional match notes
+          examples:
+            rankedMatch:
+              summary: Standard ranked match
+              value:
+                player1Id: 550e8400-e29b-41d4-a716-446655440000
+                player2Id: 660e8400-e29b-41d4-a716-446655440001
+                matchType: RANKED
+                bestOf: 1
+    responses:
+      '201':
+        description: Match created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Match created successfully
+                data:
+                  $ref: '../components/schemas.yaml#/MatchWithPlayers'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+matches_by_id:
+  get:
+    tags:
+      - Matches
+    summary: Get match details by ID
+    description: Retrieve detailed information about a specific match including players and results.
+    operationId: getMatchById
+    security:
+      - BearerAuth: []
+      - {}
+    parameters:
+      - $ref: '../components/parameters.yaml#/MatchId'
+    responses:
+      '200':
+        description: Match details retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../components/schemas.yaml#/MatchWithPlayers'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+  put:
+    tags:
+      - Matches
+    summary: Update match details
+    description: Update match metadata. Only participants can update matches, and only before completion.
+    operationId: updateMatch
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/MatchId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              notes:
+                type: string
+                maxLength: 1000
+                description: Updated match notes
+    responses:
+      '200':
+        description: Match updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Match updated successfully
+                data:
+                  $ref: '../components/schemas.yaml#/MatchWithPlayers'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+  delete:
+    tags:
+      - Matches
+    summary: Cancel a match
+    description: Cancel a scheduled or in-progress match. Cannot cancel completed matches.
+    operationId: cancelMatch
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/MatchId'
+    responses:
+      '200':
+        description: Match cancelled successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Match cancelled successfully
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+matches_result:
+  post:
+    tags:
+      - Matches
+    summary: Submit match result
+    description: Submit the final result of a match. Automatically calculates and updates ELO ratings for both players.
+    operationId: submitMatchResult
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/MatchId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - player1Score
+              - player2Score
+            properties:
+              player1Score:
+                type: integer
+                minimum: 0
+                description: Player 1's score
+                example: 25
+              player2Score:
+                type: integer
+                minimum: 0
+                description: Player 2's score
+                example: 18
+              resultType:
+                type: string
+                enum: [WIN, LOSS, DRAW, FORFEIT, NO_CONTEST]
+                description: Result type (auto-determined if not specified)
+          examples:
+            player1Win:
+              summary: Player 1 wins
+              value:
+                player1Score: 25
+                player2Score: 18
+            draw:
+              summary: Draw match
+              value:
+                player1Score: 20
+                player2Score: 20
+    responses:
+      '201':
+        description: Match result submitted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Match result submitted successfully
+                data:
+                  $ref: '../components/schemas.yaml#/MatchResult'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
