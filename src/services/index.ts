@@ -7,8 +7,16 @@ export * from './LeaderboardService';
 
 // Export singleton instances for backward compatibility
 import LeaderboardService from './LeaderboardService';
-export { LeaderboardService };
-export const leaderboardService = new LeaderboardService();
+import { PlayerService } from './PlayerService';
+import { MatchService } from './MatchService';
+import { getPrismaClient } from './database';
+
+export { LeaderboardService, PlayerService, MatchService };
+
+// Create singleton instances
+export const leaderboardService = new LeaderboardService(getPrismaClient());
+export const playerService = new PlayerService();
+export const matchService = new MatchService(getPrismaClient());
 
 // Export API Gateway adapter
 export * from './ApiGatewayAdapter';

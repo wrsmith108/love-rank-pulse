@@ -29,7 +29,7 @@ export default {
     '/__tests__/fixtures/'
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!(msw|@mswjs|until-async)/)'
+    'node_modules/(?!(msw|@mswjs|@bundled-es-modules|@open-draft|statuses|strict-event-emitter|until-async|is-node-process)/)'
   ],
   collectCoverage: true,
   collectCoverageFrom: [
