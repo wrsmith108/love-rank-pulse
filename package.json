@@ -23,7 +23,8 @@
     "prisma:seed:synthetic": "tsx prisma/seed-synthetic.ts",
     "prisma:reset": "prisma migrate reset",
     "prisma:studio": "prisma studio",
-    "prisma:validate": "prisma validate"
+    "prisma:validate": "prisma validate",
+    "og:generate": "node scripts/generate-og-image.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
