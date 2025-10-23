@@ -9,7 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 
 // Enhanced mock data for demonstration
-const mockPlayers: Player[] = [
+const mockSessionPlayers: Player[] = [
   {
     player_id: "1",
     player_name: "ShadowStriker",
@@ -155,6 +155,196 @@ const mockPlayers: Player[] = [
   },
 ];
 
+// Country leaderboard - filtered to US players only
+const mockCountryPlayers: Player[] = [
+  {
+    player_id: "1",
+    player_name: "ShadowStriker",
+    country_code: "US",
+    kills: 2845,
+    deaths: 892,
+    kd_ratio: 3.19,
+    is_win: true,
+    rank: 1,
+    headshots: 1234,
+    accuracy: 67,
+    score: 89500
+  },
+  {
+    player_id: "6",
+    player_name: "IronSight",
+    country_code: "US",
+    kills: 2219,
+    deaths: 1020,
+    kd_ratio: 2.17,
+    is_win: false,
+    rank: 2,
+    headshots: 987,
+    accuracy: 61,
+    score: 73200
+  },
+  {
+    player_id: "11",
+    player_name: "EagleEye",
+    country_code: "US",
+    kills: 2104,
+    deaths: 1145,
+    kd_ratio: 1.84,
+    is_win: true,
+    rank: 3,
+    headshots: 856,
+    accuracy: 58,
+    score: 68400
+  },
+  {
+    player_id: "12",
+    player_name: "TexasRanger",
+    country_code: "US",
+    kills: 1987,
+    deaths: 1198,
+    kd_ratio: 1.66,
+    is_win: false,
+    rank: 4,
+    headshots: 723,
+    accuracy: 54,
+    score: 62100
+  },
+  {
+    player_id: "13",
+    player_name: "StateSide",
+    country_code: "US",
+    kills: 1876,
+    deaths: 1234,
+    kd_ratio: 1.52,
+    is_win: true,
+    rank: 5,
+    headshots: 689,
+    accuracy: 52,
+    score: 58900
+  },
+  {
+    player_id: "current",
+    player_name: "You",
+    country_code: "US",
+    kills: 1564,
+    deaths: 1356,
+    kd_ratio: 1.15,
+    is_win: true,
+    rank: 234,
+    headshots: 428,
+    accuracy: 49,
+    score: 49800
+  },
+];
+
+// Global leaderboard - top players worldwide
+const mockGlobalPlayers: Player[] = [
+  {
+    player_id: "g1",
+    player_name: "GlobalElite",
+    country_code: "KR",
+    kills: 8945,
+    deaths: 1234,
+    kd_ratio: 7.25,
+    is_win: true,
+    rank: 1,
+    headshots: 4567,
+    accuracy: 78,
+    score: 245000
+  },
+  {
+    player_id: "g2",
+    player_name: "ProGamer",
+    country_code: "SE",
+    kills: 7823,
+    deaths: 1456,
+    kd_ratio: 5.37,
+    is_win: true,
+    rank: 2,
+    headshots: 3892,
+    accuracy: 74,
+    score: 218000
+  },
+  {
+    player_id: "g3",
+    player_name: "LegendKiller",
+    country_code: "JP",
+    kills: 7456,
+    deaths: 1678,
+    kd_ratio: 4.44,
+    is_win: false,
+    rank: 3,
+    headshots: 3421,
+    accuracy: 71,
+    score: 198500
+  },
+  {
+    player_id: "g4",
+    player_name: "AceMaster",
+    country_code: "DE",
+    kills: 6892,
+    deaths: 1823,
+    kd_ratio: 3.78,
+    is_win: true,
+    rank: 4,
+    headshots: 3156,
+    accuracy: 68,
+    score: 176400
+  },
+  {
+    player_id: "g5",
+    player_name: "WarLord",
+    country_code: "BR",
+    kills: 6234,
+    deaths: 1987,
+    kd_ratio: 3.14,
+    is_win: true,
+    rank: 5,
+    headshots: 2845,
+    accuracy: 65,
+    score: 159800
+  },
+  {
+    player_id: "g6",
+    player_name: "TitanSlayer",
+    country_code: "CN",
+    kills: 5987,
+    deaths: 2145,
+    kd_ratio: 2.79,
+    is_win: false,
+    rank: 6,
+    headshots: 2678,
+    accuracy: 63,
+    score: 148200
+  },
+  {
+    player_id: "g7",
+    player_name: "ShadowStriker",
+    country_code: "US",
+    kills: 5678,
+    deaths: 2234,
+    kd_ratio: 2.54,
+    is_win: true,
+    rank: 7,
+    headshots: 2489,
+    accuracy: 61,
+    score: 139600
+  },
+  {
+    player_id: "current",
+    player_name: "You",
+    country_code: "US",
+    kills: 1564,
+    deaths: 1356,
+    kd_ratio: 1.15,
+    is_win: true,
+    rank: 1234,
+    headshots: 428,
+    accuracy: 49,
+    score: 49800
+  },
+];
+
 const mockPlayerStats: PlayerStats = {
   player_name: "You",
   country_code: "US",
@@ -190,7 +380,7 @@ const Index = () => {
   const [showOnlyFriends, setShowOnlyFriends] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [players, setPlayers] = React.useState<Player[]>(mockPlayers);
+  const [players, setPlayers] = React.useState<Player[]>(mockSessionPlayers);
   const [currentSessionId] = React.useState("4721");
   const [countryCode, setCountryCode] = React.useState("US");
 
@@ -233,9 +423,19 @@ const Index = () => {
     setError(null);
     setIsLoading(true);
 
-    // Simulate data refresh
+    // Simulate data refresh based on active tab
     setTimeout(() => {
-      setPlayers(mockPlayers);
+      switch (activeTab) {
+        case "session":
+          setPlayers(mockSessionPlayers);
+          break;
+        case "country":
+          setPlayers(mockCountryPlayers);
+          break;
+        case "global":
+          setPlayers(mockGlobalPlayers);
+          break;
+      }
       setIsLoading(false);
     }, 1000);
   };
@@ -244,6 +444,23 @@ const Index = () => {
   const handleTabChange = (tab: "session" | "country" | "global") => {
     setActiveTab(tab);
     setError(null);
+    setIsLoading(true);
+
+    // Load appropriate data based on tab
+    setTimeout(() => {
+      switch (tab) {
+        case "session":
+          setPlayers(mockSessionPlayers);
+          break;
+        case "country":
+          setPlayers(mockCountryPlayers);
+          break;
+        case "global":
+          setPlayers(mockGlobalPlayers);
+          break;
+      }
+      setIsLoading(false);
+    }, 300);
   };
 
   // WebSocket is connected via useWebSocket hook above
@@ -319,7 +536,12 @@ const Index = () => {
             <div className="text-center">
               <span className="text-sm text-muted-foreground">Your Position: </span>
               <span className="text-lg font-bold text-primary">
-                #{mockPlayerStats.session_rank} of {mockPlayerStats.total_session_players}
+                #{activeTab === "session" ? mockPlayerStats.session_rank :
+                  activeTab === "country" ? mockPlayerStats.country_rank :
+                  mockPlayerStats.global_rank} of{" "}
+                {activeTab === "session" ? mockPlayerStats.total_session_players :
+                 activeTab === "country" ? mockPlayerStats.total_country_players :
+                 mockPlayerStats.total_global_players}
               </span>
             </div>
           </div>
