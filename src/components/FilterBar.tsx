@@ -73,7 +73,7 @@ export const FilterBar = ({
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-muted-foreground" />
             <Select value={countryCode} onValueChange={onCountryChange}>
-              <SelectTrigger className={`${isMobile ? 'w-32' : 'w-40'} bg-secondary border-border`}>
+              <SelectTrigger className={`${isMobile ? 'w-32' : 'w-40'} bg-secondary border-border`} data-testid="country-select">
                 <SelectValue placeholder="Select country" />
               </SelectTrigger>
               <SelectContent>

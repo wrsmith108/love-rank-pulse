@@ -155,10 +155,11 @@ const mockSessionPlayers: Player[] = [
   },
 ];
 
-// Country leaderboard - filtered to US players only
-const mockCountryPlayers: Player[] = [
+// All country players - comprehensive dataset for country filtering
+const allCountryPlayers: Player[] = [
+  // US players
   {
-    player_id: "1",
+    player_id: "us1",
     player_name: "ShadowStriker",
     country_code: "US",
     kills: 2845,
@@ -171,7 +172,7 @@ const mockCountryPlayers: Player[] = [
     score: 89500
   },
   {
-    player_id: "6",
+    player_id: "us2",
     player_name: "IronSight",
     country_code: "US",
     kills: 2219,
@@ -184,7 +185,7 @@ const mockCountryPlayers: Player[] = [
     score: 73200
   },
   {
-    player_id: "11",
+    player_id: "us3",
     player_name: "EagleEye",
     country_code: "US",
     kills: 2104,
@@ -197,7 +198,7 @@ const mockCountryPlayers: Player[] = [
     score: 68400
   },
   {
-    player_id: "12",
+    player_id: "us4",
     player_name: "TexasRanger",
     country_code: "US",
     kills: 1987,
@@ -210,7 +211,7 @@ const mockCountryPlayers: Player[] = [
     score: 62100
   },
   {
-    player_id: "13",
+    player_id: "us5",
     player_name: "StateSide",
     country_code: "US",
     kills: 1876,
@@ -222,6 +223,180 @@ const mockCountryPlayers: Player[] = [
     accuracy: 52,
     score: 58900
   },
+  // Germany players
+  {
+    player_id: "de1",
+    player_name: "PanzerElite",
+    country_code: "DE",
+    kills: 2734,
+    deaths: 956,
+    kd_ratio: 2.86,
+    is_win: true,
+    rank: 1,
+    headshots: 1156,
+    accuracy: 65,
+    score: 84500
+  },
+  {
+    player_id: "de2",
+    player_name: "BerlinSniper",
+    country_code: "DE",
+    kills: 2456,
+    deaths: 1087,
+    kd_ratio: 2.26,
+    is_win: true,
+    rank: 2,
+    headshots: 1023,
+    accuracy: 62,
+    score: 76800
+  },
+  {
+    player_id: "de3",
+    player_name: "TeutonWarrior",
+    country_code: "DE",
+    kills: 2198,
+    deaths: 1178,
+    kd_ratio: 1.87,
+    is_win: false,
+    rank: 3,
+    headshots: 892,
+    accuracy: 59,
+    score: 69200
+  },
+  {
+    player_id: "de4",
+    player_name: "PhantomAce",
+    country_code: "DE",
+    kills: 2045,
+    deaths: 1245,
+    kd_ratio: 1.64,
+    is_win: true,
+    rank: 4,
+    headshots: 798,
+    accuracy: 56,
+    score: 64300
+  },
+  // Japan players
+  {
+    player_id: "jp1",
+    player_name: "SamuraiX",
+    country_code: "JP",
+    kills: 2912,
+    deaths: 845,
+    kd_ratio: 3.45,
+    is_win: true,
+    rank: 1,
+    headshots: 1289,
+    accuracy: 69,
+    score: 92300
+  },
+  {
+    player_id: "jp2",
+    player_name: "TokyoDrifter",
+    country_code: "JP",
+    kills: 2587,
+    deaths: 978,
+    kd_ratio: 2.65,
+    is_win: true,
+    rank: 2,
+    headshots: 1134,
+    accuracy: 64,
+    score: 81200
+  },
+  {
+    player_id: "jp3",
+    player_name: "NinjaMaster",
+    country_code: "JP",
+    kills: 2298,
+    deaths: 1123,
+    kd_ratio: 2.05,
+    is_win: false,
+    rank: 3,
+    headshots: 945,
+    accuracy: 61,
+    score: 71500
+  },
+  {
+    player_id: "jp4",
+    player_name: "VortexPro",
+    country_code: "JP",
+    kills: 2134,
+    deaths: 1234,
+    kd_ratio: 1.73,
+    is_win: true,
+    rank: 4,
+    headshots: 834,
+    accuracy: 58,
+    score: 66700
+  },
+  // UK players
+  {
+    player_id: "gb1",
+    player_name: "BritishBeast",
+    country_code: "GB",
+    kills: 2678,
+    deaths: 923,
+    kd_ratio: 2.90,
+    is_win: true,
+    rank: 1,
+    headshots: 1178,
+    accuracy: 66,
+    score: 85600
+  },
+  {
+    player_id: "gb2",
+    player_name: "LondonLegend",
+    country_code: "GB",
+    kills: 2423,
+    deaths: 1045,
+    kd_ratio: 2.32,
+    is_win: false,
+    rank: 2,
+    headshots: 1012,
+    accuracy: 63,
+    score: 75900
+  },
+  {
+    player_id: "gb3",
+    player_name: "NightHawk",
+    country_code: "GB",
+    kills: 2156,
+    deaths: 1187,
+    kd_ratio: 1.82,
+    is_win: true,
+    rank: 3,
+    headshots: 876,
+    accuracy: 60,
+    score: 67400
+  },
+  // France players
+  {
+    player_id: "fr1",
+    player_name: "ParisAssassin",
+    country_code: "FR",
+    kills: 2512,
+    deaths: 998,
+    kd_ratio: 2.52,
+    is_win: true,
+    rank: 1,
+    headshots: 1087,
+    accuracy: 64,
+    score: 79800
+  },
+  {
+    player_id: "fr2",
+    player_name: "BlitzKrieg",
+    country_code: "FR",
+    kills: 2298,
+    deaths: 1134,
+    kd_ratio: 2.03,
+    is_win: false,
+    rank: 2,
+    headshots: 923,
+    accuracy: 61,
+    score: 72100
+  },
+  // Current player (US for demo)
   {
     player_id: "current",
     player_name: "You",
@@ -441,6 +616,13 @@ const Index = () => {
     }, 1000);
   };
 
+  // Get players filtered by country
+  const getCountryPlayers = React.useCallback((country: string): Player[] => {
+    return allCountryPlayers
+      .filter(p => p.country_code === country)
+      .map((p, index) => ({ ...p, rank: index + 1 }));
+  }, []);
+
   // Handle tab change
   const handleTabChange = (tab: "session" | "country" | "global") => {
     setActiveTab(tab);
@@ -455,7 +637,7 @@ const Index = () => {
           setPlayers(mockSessionPlayers);
           break;
         case "country":
-          setPlayers(mockCountryPlayers);
+          setPlayers(getCountryPlayers(countryCode));
           break;
         case "global":
           setPlayers(mockGlobalPlayers);
@@ -463,6 +645,19 @@ const Index = () => {
       }
       setIsLoading(false);
     }, 300);
+  };
+
+  // Handle country change - update players when country selector changes
+  const handleCountryChange = (newCountryCode: string) => {
+    setCountryCode(newCountryCode);
+    if (activeTab === "country") {
+      setIsLoading(true);
+      setDisplayCount(10); // Reset pagination
+      setTimeout(() => {
+        setPlayers(getCountryPlayers(newCountryCode));
+        setIsLoading(false);
+      }, 300);
+    }
   };
 
   // WebSocket is connected via useWebSocket hook above
@@ -546,7 +741,7 @@ const Index = () => {
               onToggleFriends={setShowOnlyFriends}
               activeTab={activeTab}
               countryCode={countryCode}
-              onCountryChange={setCountryCode}
+              onCountryChange={handleCountryChange}
               onRefresh={handleRetry}
             />
           )}
