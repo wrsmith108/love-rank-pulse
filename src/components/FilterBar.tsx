@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
 export type TimePeriod = "session" | "hour" | "today" | "week" | "month" | "all";
-export type SortOption = "rank" | "kd" | "kills" | "wins";
+export type SortOption = "rank" | "kd" | "kills" | "deaths";
 
 // Popular countries for quick selection
 const POPULAR_COUNTRIES = [
@@ -105,7 +105,7 @@ export const FilterBar = ({
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-muted-foreground" />
           <Select value={timePeriod} onValueChange={(value) => onTimePeriodChange(value as TimePeriod)}>
-            <SelectTrigger className={`${isMobile ? 'w-32' : 'w-40'} bg-secondary border-border`}>
+            <SelectTrigger className={`${isMobile ? 'w-32' : 'w-40'} bg-secondary border-border`} data-testid="time-period-select">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -125,14 +125,14 @@ export const FilterBar = ({
             <Separator orientation="vertical" className="h-6" />
             <span className="text-sm text-muted-foreground">Sort by:</span>
             <Select value={sortBy} onValueChange={(value) => onSortChange(value as SortOption)}>
-              <SelectTrigger className="w-32 bg-secondary border-border">
+              <SelectTrigger className="w-32 bg-secondary border-border" data-testid="sort-select">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="rank">Rank</SelectItem>
                 <SelectItem value="kd">K/D Ratio</SelectItem>
                 <SelectItem value="kills">Kills</SelectItem>
-                <SelectItem value="wins">Wins</SelectItem>
+                <SelectItem value="deaths">Deaths</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -147,6 +147,7 @@ export const FilterBar = ({
                 id="friends-only"
                 checked={showOnlyFriends}
                 onCheckedChange={onToggleFriends}
+                data-testid="friends-toggle"
               />
               <Label htmlFor="friends-only" className="text-sm cursor-pointer">
                 Friends Only
@@ -225,14 +226,14 @@ export const FilterBar = ({
                 <div className="space-y-2">
                   <Label htmlFor="mobile-sort">Sort by</Label>
                   <Select value={sortBy} onValueChange={(value) => onSortChange(value as SortOption)}>
-                    <SelectTrigger id="mobile-sort" className="w-full">
+                    <SelectTrigger id="mobile-sort" className="w-full" data-testid="sort-select">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="rank">Rank</SelectItem>
                       <SelectItem value="kd">K/D Ratio</SelectItem>
                       <SelectItem value="kills">Kills</SelectItem>
-                      <SelectItem value="wins">Wins</SelectItem>
+                      <SelectItem value="deaths">Deaths</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -244,6 +245,7 @@ export const FilterBar = ({
                     id="mobile-friends-only"
                     checked={showOnlyFriends}
                     onCheckedChange={onToggleFriends}
+                    data-testid="friends-toggle"
                   />
                 </div>
 

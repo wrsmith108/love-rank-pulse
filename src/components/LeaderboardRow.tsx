@@ -53,6 +53,7 @@ export const LeaderboardRow = ({
 
   return (
     <div
+      data-testid="leaderboard-row"
       className={`grid ${isMobile ? 'grid-cols-4' : 'grid-cols-7'} gap-4 px-4 py-3 transition-all ${
         isCurrentPlayer ? "bg-primary/10 border-l-4 border-l-primary" : ""
       }`}

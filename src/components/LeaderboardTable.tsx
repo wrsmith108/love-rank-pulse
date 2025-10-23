@@ -152,6 +152,8 @@ export const LeaderboardTable = ({
         {players.map((player, index) => (
           <div
             key={player.player_id}
+            data-testid="player-row"
+            data-player-id={player.player_id}
             onMouseEnter={() => handleRowMouseEnter(player.player_id)}
             onMouseLeave={handleRowMouseLeave}
             className={`transition-all duration-300 ${

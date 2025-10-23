@@ -383,6 +383,7 @@ const Index = () => {
   const [players, setPlayers] = React.useState<Player[]>(mockSessionPlayers);
   const [currentSessionId] = React.useState("4721");
   const [countryCode, setCountryCode] = React.useState("US");
+  const [displayCount, setDisplayCount] = React.useState(10);
 
   // WebSocket connection
   const { isConnected, connectionState } = useWebSocket();
@@ -445,6 +446,7 @@ const Index = () => {
     setActiveTab(tab);
     setError(null);
     setIsLoading(true);
+    setDisplayCount(10); // Reset pagination when changing tabs
 
     // Load appropriate data based on tab
     setTimeout(() => {
@@ -465,6 +467,29 @@ const Index = () => {
 
   // WebSocket is connected via useWebSocket hook above
   // Real-time updates are handled by useWebSocketSync in the background
+
+  // Sorting logic for players
+  const getSortedPlayers = React.useMemo(() => {
+    let sorted = [...players];
+
+    switch (sortBy) {
+      case 'kd':
+        sorted.sort((a, b) => b.kd_ratio - a.kd_ratio);
+        break;
+      case 'kills':
+        sorted.sort((a, b) => b.kills - a.kills);
+        break;
+      case 'deaths':
+        sorted.sort((a, b) => a.deaths - b.deaths);
+        break;
+      case 'rank':
+      default:
+        sorted.sort((a, b) => a.rank - b.rank);
+        break;
+    }
+
+    return sorted;
+  }, [players, sortBy]);
 
   return (
     <ErrorBoundary onReset={handleRetry}>
@@ -489,11 +514,6 @@ const Index = () => {
                 <div>
                   <div className="text-sm text-muted-foreground">Current Match</div>
                   <div className="text-lg font-bold text-primary">Session #{currentSessionId}</div>
-                  {isConnected && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {updateCount} updates • {eventCount} events
-                    </div>
-                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {isConnected ? (
@@ -548,7 +568,7 @@ const Index = () => {
 
           {/* Leaderboard */}
           <LeaderboardTable
-            players={players}
+            players={getSortedPlayers.slice(0, displayCount)}
             currentPlayerId="current"
             isLoading={isLoading}
             error={error}
@@ -556,11 +576,17 @@ const Index = () => {
           />
 
           {/* Load More */}
-          <div className="mt-6 text-center">
-            <button className="px-6 py-2 bg-secondary hover:bg-secondary/80 text-foreground font-medium rounded-lg transition-all">
-              Load More
-            </button>
-          </div>
+          {displayCount < getSortedPlayers.length && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setDisplayCount(prev => Math.min(prev + 10, getSortedPlayers.length))}
+                data-testid="load-more-button"
+                className="px-6 py-2 bg-secondary hover:bg-secondary/80 text-foreground font-medium rounded-lg transition-all"
+              >
+                Load More ({getSortedPlayers.length - displayCount} remaining)
+              </button>
+            </div>
+          )}
         </main>
 
         {/* My Stats Modal */}

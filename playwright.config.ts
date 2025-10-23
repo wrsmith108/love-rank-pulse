@@ -6,9 +6,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: 'list',
   use: {
-    baseURL: 'https://love-rank-pulse.vercel.app',
+    baseURL: process.env.TEST_LOCAL ? 'http://localhost:8080' : 'https://love-rank-pulse.vercel.app',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -22,7 +22,8 @@ export default defineConfig({
 
   webServer: process.env.TEST_LOCAL ? {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
+    url: 'http://localhost:8080',
+    reuseExistingServer: true,
+    timeout: 10000,
   } : undefined,
 });
