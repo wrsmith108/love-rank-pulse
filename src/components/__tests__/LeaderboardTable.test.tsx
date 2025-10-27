@@ -155,7 +155,7 @@ describe('LeaderboardTable Component', () => {
 
   // TC-TABLE-011: Virtual scrolling for performance
   test('TC-TABLE-011: should render large player lists efficiently', () => {
-    const largePlayers List = Array.from({ length: 100 }, (_, i) => ({
+    const largePlayersList = Array.from({ length: 100 }, (_, i) => ({
       player_id: `${i}`,
       player_name: `Player${i}`,
       country_code: 'US',
