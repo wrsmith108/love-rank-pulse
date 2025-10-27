@@ -132,17 +132,17 @@ export const LeaderboardTable = ({
   }
 
   return (
-    <div className="bg-card rounded-lg overflow-hidden border border-border shadow-sm">
+    <div className="bg-card rounded-lg overflow-hidden border border-border">
       {/* Table Header */}
-      <div className={`grid ${isMobile ? 'grid-cols-4' : 'grid-cols-7'} gap-4 px-4 py-3 bg-card-elevated border-b border-border sticky top-0 z-10`}>
-        <div className="text-xs font-semibold text-muted-foreground text-center">RANK</div>
-        <div className={`${isMobile ? 'col-span-2' : 'col-span-2'} text-xs font-semibold text-muted-foreground`}>PLAYER</div>
-        <div className="text-xs font-semibold text-muted-foreground text-center">K/D</div>
+      <div className={`grid ${isMobile ? 'grid-cols-4' : 'grid-cols-7'} gap-4 px-6 py-3 bg-muted/50 border-b border-border sticky top-0 z-10`}>
+        <div className="text-xs font-semibold text-muted-foreground text-center uppercase">Rank</div>
+        <div className={`${isMobile ? 'col-span-2' : 'col-span-2'} text-xs font-semibold text-muted-foreground uppercase`}>Player</div>
+        <div className="text-xs font-semibold text-muted-foreground text-center uppercase">K/D</div>
         {!isMobile && (
           <>
-            <div className="text-xs font-semibold text-muted-foreground text-center">KILLS</div>
-            <div className="text-xs font-semibold text-muted-foreground text-center">DEATHS</div>
-            <div className="text-xs font-semibold text-muted-foreground text-center">W/L</div>
+            <div className="text-xs font-semibold text-muted-foreground text-center uppercase">Kills</div>
+            <div className="text-xs font-semibold text-muted-foreground text-center uppercase">Deaths</div>
+            <div className="text-xs font-semibold text-muted-foreground text-center uppercase">Result</div>
           </>
         )}
       </div>
@@ -156,11 +156,11 @@ export const LeaderboardTable = ({
             data-player-id={player.player_id}
             onMouseEnter={() => handleRowMouseEnter(player.player_id)}
             onMouseLeave={handleRowMouseLeave}
-            className={`transition-all duration-300 ${
-              highlightedPlayerId === player.player_id ? 'bg-primary/5 scale-[1.01]' : ''
+            className={`transition-colors duration-150 ${
+              highlightedPlayerId === player.player_id ? 'bg-muted/30' : ''
             }`}
             style={{
-              animation: `fadeIn 0.3s ease-in-out ${index * 0.05}s both`
+              animation: `fadeIn 0.2s ease-in-out ${index * 0.03}s both`
             }}
           >
             <LeaderboardRow
