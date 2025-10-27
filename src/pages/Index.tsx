@@ -561,24 +561,11 @@ const Index = () => {
   const [displayCount, setDisplayCount] = React.useState(10);
 
   // WebSocket connection
-  const { isConnected, connectionState } = useWebSocket();
+  const { isConnected } = useWebSocket();
 
   // Map WebSocket connection state to ConnectionStatus state
   const getConnectionStatusState = () => {
-    if (!connectionState) return "disconnected";
-
-    switch (connectionState) {
-      case "connected":
-        return "connected";
-      case "connecting":
-        return "connecting";
-      case "reconnecting":
-        return "reconnecting";
-      case "disconnected":
-        return "disconnected";
-      default:
-        return "disconnected";
-    }
+    return isConnected ? "connected" : "disconnected";
   };
 
   // Get subscription scope based on active tab
@@ -606,7 +593,7 @@ const Index = () => {
           setPlayers(mockSessionPlayers);
           break;
         case "country":
-          setPlayers(mockCountryPlayers);
+          setPlayers(getCountryPlayers(countryCode));
           break;
         case "global":
           setPlayers(mockGlobalPlayers);
@@ -720,7 +707,7 @@ const Index = () => {
                     <>
                       <div className="w-2 h-2 rounded-full bg-muted" />
                       <span className="text-sm font-medium text-muted-foreground">
-                        {connectionState}
+                        {getConnectionStatusState()}
                       </span>
                     </>
                   )}
